@@ -40,6 +40,7 @@ from chameleon_mcp._thresholds import threshold_float, threshold_int
 from chameleon_mcp.bootstrap.canonical_scanner import scan_for_injection_signals
 from chameleon_mcp.bootstrap.clustering import Cluster
 from chameleon_mcp.bootstrap.discovery import is_eligible_as_canonical
+from chameleon_mcp.bootstrap.swift_history import HistoryAge, swift_history_ages
 from chameleon_mcp.profile.poisoning_scanner import scan_for_dangerous_patterns
 
 # A Rails abstract base (`application_job.rb`, `application_controller.rb`,
@@ -128,6 +129,7 @@ class CanonicalSelectionResult:
     clusters are therefore emitted WITNESSLESS -- the unsafe file is still never
     surfaced as a witness, but the cohort keeps its identity, siblings and
     conventions."""
+    swift_history: dict[str, HistoryAge] = field(default_factory=dict)
 
 
 def _hash_cluster_key(cluster: Cluster) -> str:
@@ -365,16 +367,31 @@ def select_canonicals(
     only_failing: list[Cluster] = []
     poisoning_only: list[Cluster] = []
 
-    # One git-log walk for the whole pass builds {rel_path: last_commit_epoch}.
-    # When git is unavailable the pass falls back to mtime for every file
-    # silently -- a capability fallback, not a hook-delivery degradation, so it is
-    # not telemetered (doctor/get_status surface profile health on demand); a
-    # per-file untracked miss falls back the same way. CHAMELEON_CANONICAL_GIT_RECENCY=0
-    # is the kill switch: skip the git walk and use the legacy mtime step.
-    if os.environ.get("CHAMELEON_CANONICAL_GIT_RECENCY") == "0":
+    swift_paths = [
+        _rel_posix(pf.path, repo_root)
+        for cluster in clusters
+        for pf in cluster.members
+        if pf.path.suffix.lower() == ".swift"
+    ]
+    swift_history = swift_history_ages(repo_root, swift_paths) if swift_paths else {}
+    has_other_languages = any(
+        pf.path.suffix.lower() != ".swift" for cluster in clusters for pf in cluster.members
+    )
+    if not has_other_languages or os.environ.get("CHAMELEON_CANONICAL_GIT_RECENCY") == "0":
         commit_map = None
     else:
         commit_map, _recency_source = _build_commit_time_map(repo_root)
+
+    def recency(path: Path) -> float:
+        rel = _rel_posix(path, repo_root)
+        if path.suffix.lower() == ".swift":
+            age = swift_history[rel]
+            if age.epoch is None and age.reason not in {"untracked", "disabled", "non-git"}:
+                return 1.0
+            epoch = age.epoch
+        else:
+            epoch = commit_map.get(rel) if commit_map is not None else None
+        return _file_recency_weight(path, now=effective_now, commit_epoch=epoch)
 
     for cluster in clusters:
         cluster_id = _hash_cluster_key(cluster)
@@ -529,15 +546,7 @@ def select_canonicals(
         scored = [
             (
                 pf,
-                _file_recency_weight(
-                    pf.path,
-                    now=effective_now,
-                    commit_epoch=(
-                        commit_map.get(_rel_posix(pf.path, repo_root))
-                        if commit_map is not None
-                        else None
-                    ),
-                ),
+                recency(pf.path),
                 typicality.get(i, 0),
                 demote.get(i, False),
             )
@@ -609,6 +618,7 @@ def select_canonicals(
 
     return CanonicalSelectionResult(
         selections=selections,
+        swift_history=swift_history,
         clusters_without_eligible_canonical=no_eligible,
         clusters_with_only_failing_canonicals=only_failing,
         clusters_failing_poisoning_only=poisoning_only,

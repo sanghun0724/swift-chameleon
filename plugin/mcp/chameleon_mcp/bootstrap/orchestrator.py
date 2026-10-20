@@ -1345,6 +1345,7 @@ class BootstrapReport:
     duration_ms: int
     profile_path: Path | None
     error: str | None = None
+    swift_history: dict = field(default_factory=dict)
     sparse_cluster_warnings: list[dict] = field(default_factory=list)
     """Phase 2C.3: clusters with fewer than SPARSE_CLUSTER_THRESHOLD members.
 
@@ -3217,6 +3218,10 @@ def _bootstrap_single(
 
     selection = select_canonicals(clustering.dense_clusters, repo_root, now=now)
     canonicals_skipped_failed_scans = len(selection.clusters_with_only_failing_canonicals)
+    swift_history = {
+        path: {"epoch": age.epoch, "reason": age.reason}
+        for path, age in selection.swift_history.items()
+    }
 
     generation = _generation_counter(now=started_at)
     # A no-remote repo's canonical id is keyed off a repo_uuid persisted in
@@ -3529,6 +3534,8 @@ def _bootstrap_single(
             },
         },
     }
+    if swift_history:
+        profile_data["swift_history"] = swift_history
     if parent_repo_id is not None or parent_workspace_path is not None:
         # Back-reference to the monorepo root this workspace was fanned out
         # from. The root profile catalogs its children in
@@ -4072,6 +4079,7 @@ def _bootstrap_single(
         files_skipped_parse=files_skipped_parse,
         duration_ms=duration_ms,
         profile_path=profile_dir,
+        swift_history=swift_history,
         sparse_cluster_warnings=sparse_warnings,
         bimodal_cluster_warnings=bimodal_warnings,
         taught_import_warnings=taught_import_warnings,
