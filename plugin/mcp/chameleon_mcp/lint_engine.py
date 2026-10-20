@@ -184,6 +184,8 @@ def security_language(file_path: str | None) -> str | None:
         return narrow
     if not file_path:
         return None
+    if file_path.lower().endswith(".swift"):
+        return "swift"
     try:
         from chameleon_mcp.extractors.treesitter.lang.specs import EXTENSIONS_BY_LANGUAGE
 

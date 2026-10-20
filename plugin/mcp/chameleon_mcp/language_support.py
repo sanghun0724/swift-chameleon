@@ -58,7 +58,11 @@ class LanguageCapabilities:
         """The capabilities this language does NOT have, for an honest report."""
         absent: list[str] = []
         if not self.graded_call_edges:
-            absent.append("graded cross-file call edges (same-file edges only)")
+            absent.append(
+                "call edges (including same-file overload resolution)"
+                if self.language == "swift"
+                else "graded cross-file call edges (same-file edges only)"
+            )
         if not self.cross_file_index:
             absent.append("reverse/exports index (query_symbol_importers, removed-export checks)")
         if not self.lint_rules:
@@ -131,6 +135,7 @@ def _register_spec_languages() -> None:
 
 
 _register_spec_languages()
+_CAPABILITIES["swift"] = _extraction("swift")
 
 
 def capabilities_for(language: str | None) -> LanguageCapabilities | None:

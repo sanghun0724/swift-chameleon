@@ -78,6 +78,10 @@ REPO_SIZE_GUARD = 200_000
 EXCLUDE_FROM_CLUSTERING_DIRS = frozenset(
     {
         "node_modules",
+        ".build",
+        ".swiftpm",
+        "Pods",
+        "Carthage",
         "vendor",
         "dist",
         "build",
@@ -108,6 +112,10 @@ EXCLUDE_FROM_CLUSTERING_DIRS = frozenset(
 
 EXCLUDE_FROM_CLUSTERING_FILE_GLOBS = (
     ".DS_Store",
+    "Package.swift",
+    "Project.swift",
+    "Workspace.swift",
+    "Tuist.swift",
     "*.min.js",
     "*.min.css",
     "*.bundle.js",

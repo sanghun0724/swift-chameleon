@@ -23,6 +23,7 @@ from pathlib import Path
 from chameleon_mcp.extractors._base import Extractor
 from chameleon_mcp.extractors.python import PythonExtractor
 from chameleon_mcp.extractors.ruby import RubyExtractor
+from chameleon_mcp.extractors.swift import SwiftExtractor
 from chameleon_mcp.extractors.typescript import TypeScriptExtractor
 
 
@@ -55,6 +56,7 @@ def _spec_driven_extractor_classes() -> list[type[Extractor]]:
 EXTRACTORS: list[type[Extractor]] = [
     TypeScriptExtractor,
     RubyExtractor,
+    SwiftExtractor,
     *_spec_driven_extractor_classes(),
     PythonExtractor,
 ]
@@ -127,10 +129,14 @@ def _resolve_first_class_precedence(
     try:
         from chameleon_mcp.extractors.spec_driven import SpecDrivenExtractor, outranked_by
 
-        if not isinstance(ext, SpecDrivenExtractor):
+        if not isinstance(ext, (SpecDrivenExtractor, SwiftExtractor)):
             return ext
         candidates = (cls() for cls in remaining)
-        later = {c.language: c for c in candidates if not isinstance(c, SpecDrivenExtractor)}
+        later = {
+            c.language: c
+            for c in candidates
+            if not isinstance(c, (SpecDrivenExtractor, SwiftExtractor))
+        }
         winner = outranked_by(repo_root, ext.language, tuple(later)) if later else None
         if winner is None:
             return ext

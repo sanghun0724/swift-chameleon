@@ -29,6 +29,7 @@ from chameleon_mcp.extractors.treesitter.lang.specs import ALL as _SPECS
 # is a file a build tool REQUIRES, so its presence is a statement about the repo
 # rather than about one file in it.
 _MARKERS: dict[str, tuple[str, ...]] = {
+    "swift": ("Package.swift", "Project.swift", "Workspace.swift", "Tuist.swift"),
     "go": ("go.mod", "go.work"),
     "rust": ("Cargo.toml",),
     "java": ("pom.xml", "build.gradle", "build.gradle.kts", "settings.gradle"),
@@ -95,7 +96,12 @@ class SpecDrivenExtractor:
         for language, extensions in extensions_by_language().items():
             if language == exclude or language not in _MARKERS:
                 continue
-            probe = SpecDrivenExtractor(language, extensions)
+            if language == "swift":
+                from chameleon_mcp.extractors.swift import SwiftExtractor
+
+                probe = SwiftExtractor()
+            else:
+                probe = SpecDrivenExtractor(language, extensions)
             try:
                 if probe.can_handle(repo_root):
                     found.append(language)
@@ -223,7 +229,12 @@ def outranked_by(repo_root: Path, language: str, candidates: tuple[str, ...]) ->
         return None
 
     winner: str | None = None
-    best, _ = _scan_source(repo_root, by_language.get(language, ()), first_only=False)
+    if language == "swift":
+        from chameleon_mcp.extractors.swift import source_count
+
+        best = source_count(repo_root)
+    else:
+        best, _ = _scan_source(repo_root, by_language.get(language, ()), first_only=False)
     for candidate, extensions in qualified:
         count, _ = _scan_source(repo_root, extensions, first_only=False)
         if count > best:

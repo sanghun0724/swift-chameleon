@@ -27,6 +27,7 @@ from chameleon_mcp.extractors.treesitter.lang import python as python_tables
 from chameleon_mcp.extractors.treesitter.lang import ruby as ruby_tables
 from chameleon_mcp.extractors.treesitter.lang import spec_driven
 from chameleon_mcp.extractors.treesitter.lang import specs as lang_specs
+from chameleon_mcp.extractors.treesitter.lang import swift as swift_tables
 from chameleon_mcp.extractors.treesitter.lang import typescript as typescript_tables
 from chameleon_mcp.extractors.treesitter.walker import NodeBudgetExceeded, walk
 from chameleon_mcp.extractors.treesitter.walker import error_nodes as walker_error_nodes
@@ -36,6 +37,7 @@ from chameleon_mcp.extractors.treesitter.walker import error_nodes as walker_err
 # point of keeping traversal in one place.
 _TABLES: dict[str, Any] = {
     "ruby": ruby_tables,
+    "swift": swift_tables,
     "python": python_tables,
     "typescript": typescript_tables,
 }

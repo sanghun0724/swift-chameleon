@@ -55,6 +55,7 @@ _EXTENSION_GRAMMARS: dict[str, tuple[str, str, str]] = {
     ".rake": ("tree_sitter_ruby", "language", "ruby"),
     ".gemspec": ("tree_sitter_ruby", "language", "ruby"),
     ".py": ("tree_sitter_python", "language", "python"),
+    ".swift": ("tree_sitter_swift", "language", "swift"),
     # .pyi stubs were never discoverable through the libcst dumper's glob, but
     # downstream paths (signature contract-diff, phantom-symbol probes) already
     # honor them. Grammar selection is by extension here, so they cost nothing.
