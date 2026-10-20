@@ -5,7 +5,6 @@
 # It runs only on:
 #
 #   - workflow_dispatch (manual trigger, "Run workflow" in the Actions UI)
-#   - weekly cron (Mondays at 12:00 UTC) — a smoke pass against main
 #
 # REQUIRED SECRETS (must be configured in the repo settings under
 # Settings -> Secrets and variables -> Actions). If absent, the workflow
@@ -33,9 +32,6 @@ name: real-claude-code-acceptance
 
 on:
   workflow_dispatch:
-  schedule:
-    # Mondays at 12:00 UTC. Adjust as needed.
-    - cron: '0 12 * * 1'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

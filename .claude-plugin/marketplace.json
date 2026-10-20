@@ -1,21 +1,19 @@
 {
-  "name": "chameleon",
-  "description": "Marketplace for chameleon - the convention-conformance and codebase-comprehension plugin for Claude Code.",
+  "name": "swift-chameleon",
+  "description": "Independent SwiftChameleon marketplace.",
   "owner": {
-    "name": "Cris Nahine",
-    "email": "crisjosephnahine@gmail.com"
+    "name": "sanghun0724"
   },
   "plugins": [
     {
-      "name": "chameleon",
-      "description": "Code that blends in. Auto-derives codebase conventions and injects archetype-aware guidance for AI-generated code.",
-      "version": "4.10.0",
+      "name": "swift-chameleon",
+      "description": "Swift repository patterns and recent implementation examples for AI agents.",
+      "version": "4.11.0",
       "source": "./plugin",
       "author": {
         "name": "Cris Nahine",
         "email": "crisjosephnahine@gmail.com"
       },
-      "homepage": "https://github.com/crisnahine/chameleon",
       "license": "MIT",
       "keywords": [
         "skills",
@@ -25,7 +23,8 @@
         "archetype",
         "best-practices",
         "claude-code"
-      ]
+      ],
+      "homepage": "https://github.com/sanghun0724/swift-chameleon"
     }
   ]
 }

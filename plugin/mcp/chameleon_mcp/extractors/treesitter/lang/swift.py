@@ -184,7 +184,7 @@ def callable_signature(
         "decorators": _attributes(node, text),
     }
     for index, child in enumerate(node.children):
-        if child.type == "throws":
+        if child.type in {"throws", "throws_clause"}:
             signature["throws"] = text(child)
         if child.type == "->" and index + 1 < len(node.children):
             result = node.children[index + 1]

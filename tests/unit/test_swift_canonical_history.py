@@ -1,5 +1,3 @@
-"""Swift witness ranking uses substantive history under one bounded budget."""
-
 from __future__ import annotations
 
 import os
@@ -19,14 +17,6 @@ from chameleon_mcp.extractors.treesitter import grammars
 OLD = 1_600_000_000
 RECENT = OLD + 400 * 86400
 NOW = RECENT + 86400
-
-
-@pytest.fixture(autouse=True)
-def swift_grammar(monkeypatch):
-    # The history worktree intentionally does not own grammar registration.
-    monkeypatch.setitem(
-        grammars._EXTENSION_GRAMMARS, ".swift", ("tree_sitter_swift", "language", "swift")
-    )
 
 
 def git(root, *args, at=OLD):
@@ -67,7 +57,7 @@ def selected(repo, names, *, now=NOW):
         ParsedFile(
             path=repo / name,
             content_first_200_bytes="",
-            top_level_node_kinds=("StructDeclaration",),
+            top_level_node_kinds=("SwiftStructDeclaration",),
             default_export_kind=None,
             named_export_count=1,
             import_specifiers=(),

@@ -901,6 +901,7 @@ _EXTENSIONS_BY_LANGUAGE: dict[str, tuple[str, ...]] = {
     "ruby": (".rb",),
     "python": (".py",),
     "typescript": (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"),
+    "swift": (".swift",),
 }
 
 
@@ -1270,6 +1271,8 @@ def _secondary_language_files(
 
 
 def _glob_for_extractor(extractor: Extractor) -> str:
+    if extractor.language == "swift":
+        return "**/*.[sS][wW][iI][fF][tT]"
     suffixes = _extensions_for_extractor(extractor)
     if len(suffixes) == 1:
         return f"**/*{suffixes[0]}"
@@ -3029,9 +3032,18 @@ def _bootstrap_single(
     # errors -- or, on a small tree, as a profile clustered from garbage. Drop
     # what this extractor does not own before anything reaches the subprocess.
     owned_suffixes = _extensions_for_extractor(extractor)
-    foreign = [p for p in candidates if not p.name.endswith(owned_suffixes)]
+    swift_names = extractor.language == "swift"
+    foreign = [
+        p
+        for p in candidates
+        if not (p.name.lower() if swift_names else p.name).endswith(owned_suffixes)
+    ]
     if foreign:
-        candidates = [p for p in candidates if p.name.endswith(owned_suffixes)]
+        candidates = [
+            p
+            for p in candidates
+            if (p.name.lower() if swift_names else p.name).endswith(owned_suffixes)
+        ]
         if not candidates:
             dropped = sorted({f".{p.name.rsplit('.', 1)[-1]}" for p in foreign if "." in p.name})
             return BootstrapReport(

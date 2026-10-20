@@ -57,6 +57,7 @@ def test_settings_local_json_write_is_atomic(tmp_path, monkeypatch):
     script = plugin_root / "bin" / "chameleon-statusline.sh"
     script.write_text("#!/bin/sh\n", encoding="utf-8")
 
+    monkeypatch.setattr(Path, "home", lambda: tmp_path / "home")
     seen: list[Path] = []
     real_atomic = hook_helper._atomic_write_text
 
@@ -75,7 +76,7 @@ def test_settings_local_json_write_is_atomic(tmp_path, monkeypatch):
     assert data["statusLine"]["command"] == str(script)
 
 
-def test_settings_local_dir_created_owner_only(tmp_path):
+def test_settings_local_dir_created_owner_only(tmp_path, monkeypatch):
     from chameleon_mcp import hook_helper
 
     repo = tmp_path / "repo"
@@ -83,6 +84,7 @@ def test_settings_local_dir_created_owner_only(tmp_path):
     (plugin_root / "bin").mkdir(parents=True)
     (plugin_root / "bin" / "chameleon-statusline.sh").write_text("#!/bin/sh\n", encoding="utf-8")
 
+    monkeypatch.setattr(Path, "home", lambda: tmp_path / "home")
     hook_helper._wire_statusline_settings(repo, str(plugin_root))
 
     claude_dir = repo / ".claude"

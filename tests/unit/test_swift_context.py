@@ -1,5 +1,3 @@
-"""Swift applicability stays separate from lint capability and fuzzy similarity."""
-
 from types import SimpleNamespace
 
 import pytest
@@ -108,7 +106,6 @@ def test_swift_partition_survives_both_fuzzy_merge_passes(tmp_path):
             "SwiftExtensionDeclaration",
         ),
     ]
-    # Similar non-role dimensions would otherwise satisfy the fuzzy merge threshold.
     for parsed in files:
         parsed.top_level_node_kinds += ("FunctionDeclaration", "TypeAliasDeclaration")
     result = cluster_files(files, repo_root=tmp_path, min_cluster_size=5)
@@ -124,8 +121,9 @@ def test_swift_partition_survives_both_fuzzy_merge_passes(tmp_path):
     )
 
 
-def test_existing_nominal_never_selects_larger_protocol_or_extension(tmp_path, monkeypatch):
-    query = tmp_path / "Sources/Account/NewRepository.swift"
+@pytest.mark.parametrize("suffix", ["swift", "SWIFT"])
+def test_existing_nominal_never_selects_larger_protocol_or_extension(tmp_path, monkeypatch, suffix):
+    query = tmp_path / f"Sources/Account/NewRepository.{suffix}"
     query.parent.mkdir(parents=True)
     query.write_text("final class NewRepository {}")
     files = {
@@ -238,3 +236,12 @@ def test_nearest_witness_filters_roles_even_with_single_candidate():
         "Sources/Account/NewViewController.swift",
         {"reactor": {"paths_pattern": "Sources/Account:swift"}},
     ) == (None, [])
+
+
+def test_uppercase_swift_extension_uses_the_same_role_partition():
+    from chameleon_mcp.signatures import path_pattern_bucket_for, swift_role_for_path
+
+    assert swift_role_for_path("Sources/App/FeedViewController.SWIFT") == "view-controller"
+    assert path_pattern_bucket_for(
+        "Sources/App/FeedViewController.SWIFT"
+    ) == path_pattern_bucket_for("Sources/App/FeedViewController.swift")

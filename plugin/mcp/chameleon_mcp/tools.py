@@ -1379,7 +1379,7 @@ def _prefix_overlap_fallback(rel_str: str, archetypes: dict) -> tuple[str | None
     """
     from chameleon_mcp.signatures import python_role_for_path
 
-    if rel_str.endswith(".swift"):
+    if rel_str.lower().endswith(".swift"):
         return None, []
     file_dir = rel_str.rsplit("/", 1)[0] if "/" in rel_str else ""
     file_segments = [s for s in file_dir.split("/") if s]
@@ -1443,7 +1443,7 @@ def _nearest_canonical_entry(rel_str: str, entries: list, snapshot=None) -> dict
         return {}
     from chameleon_mcp.lint_engine import canonical_confidence
 
-    if rel_str.endswith(".swift"):
+    if rel_str.lower().endswith(".swift"):
         entries = [e for e in entries if e and _swift_canonical_compatible(rel_str, e, snapshot)]
         if not entries:
             return {}
@@ -1473,13 +1473,12 @@ def _nearest_canonical_entry(rel_str: str, entries: list, snapshot=None) -> dict
 
 
 def _file_shape_snapshot(p: Path, loaded):
-    """Read contextual dimensions without enabling extraction-tier lint."""
     del loaded
     from chameleon_mcp.lint_engine import DimensionSnapshot, detect_language, extract_dimensions
 
     if not p.is_file():
         return None
-    if p.suffix == ".swift":
+    if p.suffix.lower() == ".swift":
         from chameleon_mcp.extractors.treesitter.extractor import parse_file
         from chameleon_mcp.signatures import content_signal_match_for
 
@@ -1516,7 +1515,7 @@ def _swift_canonical_compatible(rel_str: str, entry: dict, snapshot=None) -> boo
     )
 
     witness_path = _norm_rel_path((entry.get("witness") or {}).get("path") or "")
-    if not witness_path.endswith(".swift"):
+    if not witness_path.lower().endswith(".swift"):
         return False
     if path_pattern_bucket_for(rel_str)[0] != path_pattern_bucket_for(witness_path)[0]:
         return False
@@ -1736,7 +1735,7 @@ def _get_archetype_with_loaded(
     fallback_matches: list[str] = []
 
     archetypes = loaded.archetypes.get("archetypes", {})
-    is_swift = p.suffix == ".swift"
+    is_swift = p.suffix.lower() == ".swift"
     snapshot = _file_shape_snapshot(p, loaded) if is_swift else None
     canonicals = loaded.canonicals.get("canonicals", {}) or {}
     for name, arch in archetypes.items():
@@ -2300,10 +2299,9 @@ def get_pattern_context(file_path: str) -> dict:
                 rel_str = p.resolve().relative_to(repo_root.resolve()).as_posix()
             except (ValueError, OSError):
                 rel_str = p.name
-            # Swift role compatibility applies even to a sole witness.
             snapshot = (
                 _file_shape_snapshot(p, loaded)
-                if len(canonicals) > 1 or p.suffix == ".swift"
+                if len(canonicals) > 1 or p.suffix.lower() == ".swift"
                 else None
             )
             # When an archetype has several witnesses, prefer one that still exists

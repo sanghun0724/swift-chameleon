@@ -1,18 +1,13 @@
 {
-  "name": "chameleon",
-  "version": "4.10.0",
-  "description": "Code that blends in. Auto-derives codebase conventions and injects archetype-aware guidance for AI-generated code.",
+  "name": "swift-chameleon",
+  "version": "4.11.0",
+  "description": "Swift repository patterns and recent implementation examples for AI agents.",
   "private": true,
   "license": "MIT",
   "author": {
     "name": "Cris Nahine",
     "email": "crisjosephnahine@gmail.com"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/crisnahine/chameleon"
-  },
-  "homepage": "https://github.com/crisnahine/chameleon",
   "engines": {
     "node": ">=20"
   },
@@ -20,5 +15,10 @@
     "test": "PYTHONPATH=. plugin/mcp/.venv/bin/python -m pytest tests/unit/ -q",
     "version:check": "scripts/bump-version.sh --check",
     "version:bump": "scripts/bump-version.sh"
+  },
+  "homepage": "https://github.com/sanghun0724/swift-chameleon",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sanghun0724/swift-chameleon"
   }
 }

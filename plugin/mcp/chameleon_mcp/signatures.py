@@ -459,7 +459,7 @@ _SWIFT_DECLARATION_SEPARATOR = "#declarations="
 def swift_role_for_path(file_path: str) -> str | None:
     """Return a filename role, without claiming a Swift declaration kind."""
     parts = file_path.replace("\\", "/").split("/")
-    if not parts[-1].endswith(".swift"):
+    if not parts[-1].lower().endswith(".swift"):
         return None
     stem = parts[-1][:-6]
     if stem in {"Package", "Project", "Workspace", "Tuist", "Config"}:
@@ -554,7 +554,7 @@ def path_pattern_bucket_for(
     """
     del archetype_paths
 
-    if file_path.endswith(".swift"):
+    if file_path.lower().endswith(".swift"):
         bucket = _swift_path_bucket(file_path)
         return (f"{bucket}:swift" if include_extension else bucket, "")
 
@@ -799,7 +799,7 @@ def compute_signature(
         archetype_paths,
         include_extension=include_extension_in_bucket,
     )
-    if file_path.endswith(".swift"):
+    if file_path.lower().endswith(".swift"):
         declaration_role = swift_declaration_role(top_level_node_kinds) or "unknown"
         bucket = bucket.removesuffix(":swift")
         bucket += f"{_SWIFT_DECLARATION_SEPARATOR}{declaration_role}"

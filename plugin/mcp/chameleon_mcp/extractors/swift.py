@@ -1,5 +1,3 @@
-"""Bounded Swift repository detection for SPM, Tuist and Xcode."""
-
 from __future__ import annotations
 
 import os

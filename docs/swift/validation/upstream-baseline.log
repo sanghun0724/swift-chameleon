@@ -1,0 +1,378 @@
+........................................................................ [  0%]
+........................................................................ [  1%]
+........................................................................ [  2%]
+........................................................................ [  3%]
+........................................................................ [  4%]
+........................................................................ [  5%]
+........................................................................ [  6%]
+........................................................................ [  7%]
+........................................................................ [  8%]
+.............ssss....................................................... [  9%]
+....................................................sssssssss........... [ 10%]
+..............ss.......s................................................ [ 11%]
+........................................................................ [ 12%]
+........................................................................ [ 13%]
+.....................F.................................................. [ 14%]
+........................................................................ [ 15%]
+........................................................................ [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 18%]
+........................................................................ [ 19%]
+........................................................................ [ 20%]
+........................................................................ [ 21%]
+........................................................................ [ 22%]
+........................................................................ [ 23%]
+........................................................................ [ 24%]
+........................................................................ [ 25%]
+........................................................................ [ 26%]
+........................................................................ [ 27%]
+........................................................................ [ 28%]
+........................................................................ [ 29%]
+........................................................................ [ 30%]
+........................................................................ [ 31%]
+........................................................................ [ 32%]
+........................................................................ [ 33%]
+......sssssssssss....................................................... [ 34%]
+........................................................................ [ 35%]
+........................................................................ [ 36%]
+........................................................................ [ 37%]
+.................FF..................................................... [ 38%]
+........................................................................ [ 39%]
+........................................................................ [ 40%]
+........................................................................ [ 41%]
+........................................................................ [ 42%]
+........................................................................ [ 43%]
+........................................................................ [ 44%]
+........................................................................ [ 45%]
+........................................................................ [ 46%]
+...........................................s............................ [ 47%]
+........................................................................ [ 48%]
+........................................................................ [ 49%]
+........................................................................ [ 50%]
+........................................................................ [ 51%]
+........................................................................ [ 52%]
+................................sss..................................... [ 53%]
+........................................................................ [ 54%]
+........................................................................ [ 55%]
+........................................................................ [ 56%]
+........................................................................ [ 57%]
+........................................................................ [ 58%]
+........................................................................ [ 59%]
+........................................................................ [ 60%]
+........................................................................ [ 61%]
+........................................................................ [ 62%]
+........................................................................ [ 63%]
+...................................................sssss................ [ 64%]
+........................................................................ [ 65%]
+........................................................................ [ 66%]
+........................................................................ [ 67%]
+........................................................................ [ 68%]
+........................................................................ [ 69%]
+........................................................................ [ 70%]
+........................................................................ [ 71%]
+........................................................................ [ 72%]
+........................................................................ [ 73%]
+........................................................................ [ 74%]
+........................................................................ [ 75%]
+........................................................................ [ 76%]
+.....................F.................................................. [ 77%]
+........................................................................ [ 78%]
+........................................................................ [ 79%]
+........................................................................ [ 80%]
+........................................................................ [ 81%]
+........................................................................ [ 82%]
+.................F..F................................................... [ 83%]
+........................................................................ [ 84%]
+........................................................................ [ 85%]
+........................................................................ [ 86%]
+........................................................................ [ 87%]
+........................................................................ [ 88%]
+........................................................................ [ 89%]
+........................................................................ [ 90%]
+........................................................................ [ 91%]
+........................................................................ [ 92%]
+........................................................................ [ 93%]
+........................................................................ [ 94%]
+........................................................................ [ 95%]
+........................................................................ [ 96%]
+........................................................................ [ 97%]
+............................................sssssssFsssssss............. [ 98%]
+........................................................................ [ 99%]
+.........................................................ssss            [100%]
+=================================== FAILURES ===================================
+_________________ TestDetectRuby.test_flags_commented_out_def __________________
+
+self = <test_commented_out_code.TestDetectRuby object at 0x1097e2c10>
+
+    def test_flags_commented_out_def(self):
+        content = "class Foo\n  # def old\n  #   work\n  # end\n  def cur; end\nend\n"
+>       assert _detect([content], language="ruby", extractor=self._extractor()) == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = _detect(['class Foo\n  # def old\n  #   work\n  # end\n  def cur; end\nend\n'], language='ruby', extractor=<chameleon_mcp.extractors.ruby.RubyExtractor object at 0x10cecba10>)
+E        +    where <chameleon_mcp.extractors.ruby.RubyExtractor object at 0x10cecba10> = _extractor()
+E        +      where _extractor = <test_commented_out_code.TestDetectRuby object at 0x1097e2c10>._extractor
+
+tests/unit/test_commented_out_code.py:134: AssertionError
+___________________ test_settings_local_json_write_is_atomic ___________________
+
+tmp_path = PosixPath('/private/var/folders/_s/0ykv9wd91c70ld8zc1glgd080000gp/T/pytest-of-brady/pytest-1/test_settings_local_json_write0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c349080>
+
+    def test_settings_local_json_write_is_atomic(tmp_path, monkeypatch):
+        """The statusline wiring must write settings.local.json via _atomic_write_text."""
+        from chameleon_mcp import hook_helper
+
+        repo = tmp_path / "repo"
+        plugin_root = tmp_path / "plugin"
+        (plugin_root / "bin").mkdir(parents=True)
+        script = plugin_root / "bin" / "chameleon-statusline.sh"
+        script.write_text("#!/bin/sh\n", encoding="utf-8")
+
+        seen: list[Path] = []
+        real_atomic = hook_helper._atomic_write_text
+
+        def _spy(path, text):
+            seen.append(Path(path))
+            return real_atomic(path, text)
+
+        monkeypatch.setattr(hook_helper, "_atomic_write_text", _spy)
+
+        hook_helper._wire_statusline_settings(repo, str(plugin_root))
+
+        local_settings = repo / ".claude" / "settings.local.json"
+>       assert local_settings.is_file()
+E       AssertionError: assert False
+E        +  where False = is_file()
+E        +    where is_file = PosixPath('/private/var/folders/_s/0ykv9wd91c70ld8zc1glgd080000gp/T/pytest-of-brady/pytest-1/test_settings_local_json_write0/repo/.claude/settings.local.json').is_file
+
+tests/unit/test_hook_helper_r2_fixes.py:72: AssertionError
+__________________ test_settings_local_dir_created_owner_only __________________
+
+tmp_path = PosixPath('/private/var/folders/_s/0ykv9wd91c70ld8zc1glgd080000gp/T/pytest-of-brady/pytest-1/test_settings_local_dir_create0')
+
+    def test_settings_local_dir_created_owner_only(tmp_path):
+        from chameleon_mcp import hook_helper
+
+        repo = tmp_path / "repo"
+        plugin_root = tmp_path / "plugin"
+        (plugin_root / "bin").mkdir(parents=True)
+        (plugin_root / "bin" / "chameleon-statusline.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+
+        hook_helper._wire_statusline_settings(repo, str(plugin_root))
+
+        claude_dir = repo / ".claude"
+>       assert claude_dir.is_dir()
+E       AssertionError: assert False
+E        +  where False = is_dir()
+E        +    where is_dir = PosixPath('/private/var/folders/_s/0ykv9wd91c70ld8zc1glgd080000gp/T/pytest-of-brady/pytest-1/test_settings_local_dir_create0/repo/.claude').is_dir
+
+tests/unit/test_hook_helper_r2_fixes.py:89: AssertionError
+____________________ test_prism_dump_emits_class_body_calls ____________________
+
+tmp_path = PosixPath('/private/var/folders/_s/0ykv9wd91c70ld8zc1glgd080000gp/T/pytest-of-brady/pytest-1/test_prism_dump_emits_class_bo0')
+
+    @pytest.mark.skipif(shutil.which("ruby") is None, reason="ruby not installed")
+    def test_prism_dump_emits_class_body_calls(tmp_path: Path):
+        (tmp_path / "Gemfile").write_text("source 'https://rubygems.org'\n")
+        src = tmp_path / "foo_interaction.rb"
+        src.write_text(
+            "class FooInteraction < ActiveInteraction::Base\n"
+            "  string :name\n"
+            "  integer :count, default: 0\n"
+            "  private\n"
+            "  def execute\n"
+            "    helper_call\n"  # inside a method -> must NOT be a class_body_call
+            "  end\n"
+            "end\n"
+        )
+        result = RubyExtractor().parse_repo(tmp_path)
+>       pf = next(f for f in result.files if f.path.name == "foo_interaction.rb")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       StopIteration
+
+tests/unit/test_ruby_class_body_calls.py:46: StopIteration
+_____________________ test_contract_breaks_end_to_end_ruby _____________________
+
+tmp_path = PosixPath('/private/var/folders/_s/0ykv9wd91c70ld8zc1glgd080000gp/T/pytest-of-brady/pytest-1/test_contract_breaks_end_to_en1')
+
+    @pytestmark_node
+    def test_contract_breaks_end_to_end_ruby(tmp_path):
+        repo = tmp_path / "repo_rb"
+        repo.mkdir()
+        _git(repo, "init", "-q", "-b", "main")
+        _git(repo, "config", "user.email", "t@t.test")
+        _git(repo, "config", "user.name", "t")
+        src = repo / "calc.rb"
+        src.write_text("class Calc\n  def add(a)\n    a\n  end\nend\n")
+        _git(repo, "add", "-A")
+        _git(repo, "commit", "-q", "-m", "base")
+        # Narrow: add a required positional.
+        src.write_text("class Calc\n  def add(a, b)\n    a + b\n  end\nend\n")
+
+        callers = {("calc.rb", "add"): {"callers": [{"path": "main.rb", "line": 2}], "total": 1}}
+        findings = contract_breaks(
+            repo,
+            ["calc.rb"],
+            old_ref="HEAD",
+            new_ref=None,
+            callers_fn=lambda rel, name: callers.get((rel, name)),
+            run_git=_run_git,
+        )
+>       assert len(findings) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/unit/test_signature_diff.py:494: AssertionError
+__________________ test_contract_breaks_polyglot_ts_and_ruby ___________________
+
+tmp_path = PosixPath('/private/var/folders/_s/0ykv9wd91c70ld8zc1glgd080000gp/T/pytest-of-brady/pytest-1/test_contract_breaks_polyglot_0')
+
+    @pytestmark_node
+    def test_contract_breaks_polyglot_ts_and_ruby(tmp_path):
+        if not _ruby_available():
+            import pytest as _pt
+
+            _pt.skip("ruby not available")
+        repo = tmp_path / "repo_poly"
+        repo.mkdir()
+        _git(repo, "init", "-q", "-b", "main")
+        _git(repo, "config", "user.email", "t@t.test")
+        _git(repo, "config", "user.name", "t")
+        (repo / "a.ts").write_text("export function af(x: number) { return x }\n")
+        (repo / "c.rb").write_text("class C\n  def cm(a)\n    a\n  end\nend\n")
+        _git(repo, "add", "-A")
+        _git(repo, "commit", "-q", "-m", "base")
+        (repo / "a.ts").write_text("export function af(x: number, z: number) { return x + z }\n")
+        (repo / "c.rb").write_text("class C\n  def cm(a, b)\n    a + b\n  end\nend\n")
+
+        callers = {
+            ("a.ts", "af"): {"callers": [{"path": "x.ts", "line": 1}], "total": 1},
+            ("c.rb", "cm"): {"callers": [{"path": "x.rb", "line": 1}], "total": 1},
+        }
+        findings = contract_breaks(
+            repo,
+            ["a.ts", "c.rb"],
+            old_ref="HEAD",
+            new_ref=None,
+            callers_fn=lambda rel, name: callers.get((rel, name)),
+            run_git=_run_git,
+        )
+>       assert {f.name for f in findings} == {"af", "cm"}
+E       AssertionError: assert {'af'} == {'af', 'cm'}
+E
+E         Extra items in the right set:
+E         'cm'
+E         Use -v to get more diff
+
+tests/unit/test_signature_diff.py:590: AssertionError
+----------------------------- Captured stderr call -----------------------------
+chameleon: first-run setup — installing Node deps (~10s)...
+______________ test_call_sites_default_cap_keeps_hub_module_sites ______________
+
+tmp_path = PosixPath('/private/var/folders/_s/0ykv9wd91c70ld8zc1glgd080000gp/T/pytest-of-brady/pytest-1/test_call_sites_default_cap_ke0')
+
+    def test_call_sites_default_cap_keeps_hub_module_sites(tmp_path):
+        # The default leaves headroom for a real hub module: 2,500 sites survive
+        # untruncated.
+        many = "export function f() {\n" + "g();\n" * 2500 + "}\nfunction g() {}\n"
+        f = tmp_path / "many.ts"
+        f.write_text(many, encoding="utf-8")
+>       out = subprocess.run(
+            ["node", str(_TS_DUMP)],
+            input=str(f) + "\n",
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+tests/unit/test_ts_dump_call_sites.py:179:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+input = '/private/var/folders/_s/0ykv9wd91c70ld8zc1glgd080000gp/T/pytest-of-brady/pytest-1/test_call_sites_default_cap_ke0/many.ts\n'
+capture_output = True, timeout = None, check = True
+popenargs = (['node', '/Users/brady/Desktop/open-source/swift-chameleon/plugin/scripts/ts_dump.mjs'],)
+kwargs = {'stderr': -1, 'stdin': -1, 'stdout': -1, 'text': True}
+process = <Popen: returncode: 1 args: ['node', '/Users/brady/Desktop/open-source/swift...>
+stdout = ''
+stderr = "node:internal/modules/cjs/loader:1405\n  const err = new Error(message);\n              ^\n\nError: Cannot find modul...Stack: [\n    '/Users/brady/Desktop/open-source/swift-chameleon/plugin/mcp/package.json'\n  ]\n}\n\nNode.js v23.11.1\n"
+retcode = 1
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '/Users/brady/Desktop/open-source/swift-chameleon/plugin/scripts/ts_dump.mjs']' returned non-zero exit status 1.
+
+../../../.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/subprocess.py:577: CalledProcessError
+=========================== short test summary info ============================
+FAILED tests/unit/test_commented_out_code.py::TestDetectRuby::test_flags_commented_out_def
+FAILED tests/unit/test_hook_helper_r2_fixes.py::test_settings_local_json_write_is_atomic
+FAILED tests/unit/test_hook_helper_r2_fixes.py::test_settings_local_dir_created_owner_only
+FAILED tests/unit/test_ruby_class_body_calls.py::test_prism_dump_emits_class_body_calls
+FAILED tests/unit/test_signature_diff.py::test_contract_breaks_end_to_end_ruby
+FAILED tests/unit/test_signature_diff.py::test_contract_breaks_polyglot_ts_and_ruby
+FAILED tests/unit/test_ts_dump_call_sites.py::test_call_sites_default_cap_keeps_hub_module_sites
+7 failed, 7200 passed, 54 skipped in 257.74s (0:04:17)

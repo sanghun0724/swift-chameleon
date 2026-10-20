@@ -28,6 +28,12 @@
 > source of truth for it. Read a missing column as "out of scope for this grid", never
 > as "unsupported".
 
+## SwiftChameleon additions
+
+Swift is supported at extraction tier in this independent project. The dedicated Python tree-sitter table parses declarations, attributes, imports and callable signatures. Swift context matching partitions examples by filename role, module path and declaration family. Git ranking uses bounded token comparisons that preserve string and comment contents while ignoring formatting trivia. The first-parent history walk follows pure renames. A combined rename and reformat depends on Git rename detection.
+
+Swift has no semantic call edges, reverse import index or convention lint enforcement in this release. Read `language_support.describe("swift")` for the runtime capability statement. The tables below retain the upstream three-language comparison and its historical counts.
+
 Supported languages (the agnostic core works on any framework; the named
 frameworks add a deeper, framework-aware layer on top):
 

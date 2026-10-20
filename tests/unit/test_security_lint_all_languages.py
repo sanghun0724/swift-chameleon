@@ -44,6 +44,7 @@ _SOURCES: dict[str, tuple[str, str]] = {
     "typescript": ("leak.ts", 'export const k = "%s";\n'),
     "ruby": ("leak.rb", 'K = "%s"\n'),
     "python": ("leak.py", 'K = "%s"\n'),
+    "swift": ("Leak.swift", 'struct Leak { let key = "%s" }\n'),
 }
 
 

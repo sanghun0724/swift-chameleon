@@ -1,13 +1,11 @@
 {
-  "name": "chameleon",
-  "description": "Code that blends in. Auto-derives codebase conventions and injects archetype-aware guidance for AI-generated code.",
-  "version": "4.10.0",
+  "name": "swift-chameleon",
+  "description": "Repository-specific Swift patterns and recent implementation examples before AI edits.",
+  "version": "4.11.0",
   "author": {
     "name": "Cris Nahine",
     "email": "crisjosephnahine@gmail.com"
   },
-  "homepage": "https://github.com/crisnahine/chameleon",
-  "repository": "https://github.com/crisnahine/chameleon",
   "license": "MIT",
   "keywords": [
     "skills",
@@ -16,6 +14,9 @@
     "ast-analysis",
     "archetype",
     "best-practices",
-    "claude-code"
-  ]
+    "claude-code",
+    "swift"
+  ],
+  "homepage": "https://github.com/sanghun0724/swift-chameleon",
+  "repository": "https://github.com/sanghun0724/swift-chameleon"
 }

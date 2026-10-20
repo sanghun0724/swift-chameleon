@@ -214,3 +214,15 @@ def test_parse_repo_honors_explicit_paths_and_file_limit(tmp_path):
     assert [row.path for row in selected.files] == [second]
     limited = extractor.parse_repo(tmp_path, paths=[first, second], limit=1)
     assert [row.path for row in limited.files] == [first]
+
+
+def test_typed_throws_preserves_declared_error_contract(tmp_path):
+    path = tmp_path / "Typed.swift"
+    path.write_text("func load() throws(NetworkError) -> Bool { true }\n")
+    parsed, reason = parse_file(path)
+    assert reason is None
+    assert parsed is not None
+    assert parsed.parse_diagnostics_count == 0
+    signature = parsed.extras["callable_signatures"][0]
+    assert signature["throws"] == "throws(NetworkError)"
+    assert signature["return_type"] == "Bool"

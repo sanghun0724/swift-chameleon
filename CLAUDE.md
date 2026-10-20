@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code when working with code in this repository.
 
+## SwiftChameleon scope
+
+This is an independent Swift-focused project based on Chameleon. Preserve upstream attribution. Swift uses `extractors/swift.py` and the dedicated `extractors/treesitter/lang/swift.py` table. It provides extraction and context matching, not semantic call resolution or Swift convention blocking. Runtime module names and profile paths remain compatible with upstream. `docs/swift/PLAN.md` and `docs/swift/verification.md` describe the initial implementation.
+
 ## What this repo is
 
 `chameleon` — a Claude Code plugin that auto-derives codebase conventions and injects archetype-aware guidance per-edit (conformance), and answers codebase-comprehension queries like search_codebase, describe_codebase, get_callees, and get_blast_radius (comprehension). Supports TypeScript/JavaScript, Ruby, and Python as first-class languages — framework-agnostic by default (it learns each repo's own conventions, so any framework works), with deeper framework-aware guidance where conventions are strong: Rails for Ruby, Django, DRF, Flask, and FastAPI for Python, and Next.js and NestJS for TypeScript/JavaScript.
