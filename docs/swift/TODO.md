@@ -21,3 +21,16 @@
 ## Throughput checkpoint
 
 Inspect the existing language tables and reuse the profile/context pipeline. Parallelize read-only design and review. Keep extraction and Git ranking in separate implementation scopes. Do not duplicate the upstream engine or rewrite unrelated language backends.
+
+## Codex generation validation
+
+- [x] Fix the evaluation protocol before generation and freeze its adapter source.
+- [x] Prove native Codex startup and edit context delivery with isolated settings.
+- [x] Replace the platform matrix with macOS only, as requested.
+- [x] Finish all 20 generation cells without replacing failures.
+- [x] Review every generated change and obtain a blinded independent judgment.
+- [x] Fix adapter boundary findings after the frozen trial ends.
+- [x] Publish results with evidence, uncertainty, and reproducible commands.
+- [ ] Run the final macOS CI matrix and push the reviewed integration.
+
+Cross-platform CLI validation is skipped at the user's request. Generation uses Codex only.
