@@ -275,6 +275,8 @@ def cluster_files(
         """
         if resolved <= 1 or not members:
             return resolved
+        if key.path_pattern_bucket.startswith("swift/"):
+            return 1
         try:
             p = members[0].path
             rel = str(p.relative_to(root)) if root is not None else str(p)

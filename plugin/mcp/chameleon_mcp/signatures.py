@@ -430,6 +430,76 @@ def nestjs_role_for_path(file_path: str) -> str | None:
     return None
 
 
+_SWIFT_ROLE_SUFFIXES: tuple[tuple[str, str], ...] = (
+    ("ViewController", "view-controller"),
+    ("RepositoryImpl", "repository"),
+    ("UseCaseImpl", "use-case"),
+    ("ViewModel", "view-model"),
+    ("Repository", "repository"),
+    ("UseCase", "use-case"),
+    ("Reactor", "reactor"),
+    ("Assembly", "assembly"),
+    ("Router", "router"),
+    ("Builder", "builder"),
+    ("Service", "service"),
+    ("Controller", "controller"),
+    ("Presenter", "presenter"),
+    ("Coordinator", "coordinator"),
+    ("Cell", "cell"),
+    ("View", "view"),
+    ("DTO", "dto"),
+)
+_SWIFT_DECLARATION_KINDS = {
+    f"Swift{kind.title()}Declaration": kind
+    for kind in ("class", "struct", "enum", "actor", "protocol", "extension")
+}
+_SWIFT_DECLARATION_SEPARATOR = "#declarations="
+
+
+def swift_role_for_path(file_path: str) -> str | None:
+    """Return a filename role, without claiming a Swift declaration kind."""
+    parts = file_path.replace("\\", "/").split("/")
+    if not parts[-1].endswith(".swift"):
+        return None
+    stem = parts[-1][:-6]
+    if stem in {"Package", "Project", "Workspace", "Tuist", "Config"}:
+        return "build-manifest"
+    if any(
+        p.lower() in {"test", "tests", "uitests", "testing"} for p in parts[:-1]
+    ) or stem.endswith(("Tests", "Test", "UITests")):
+        return "test"
+    for suffix, role in _SWIFT_ROLE_SUFFIXES:
+        if stem.endswith(suffix):
+            return role
+    return None
+
+
+def swift_declaration_role(node_kinds: Sequence[str]) -> str | None:
+    """Keep mixed declaration families distinct from each individual family."""
+    roles = sorted(
+        {_SWIFT_DECLARATION_KINDS[k] for k in node_kinds if k in _SWIFT_DECLARATION_KINDS}
+    )
+    return "+".join(roles) if roles else None
+
+
+def _swift_path_bucket(file_path: str) -> str:
+    parts = [p for p in file_path.replace("\\", "/").split("/") if p and p not in (".", "..")]
+    dirs = parts[:-1]
+    scope = dirs[:2]
+    if len(dirs) >= 3 and dirs[0].lower() == "projects":
+        scope = dirs[:3]
+    role = swift_role_for_path(file_path) or "unknown"
+    return "/".join(["swift", *scope, role])
+
+
+def swift_bucket_matches(pattern: str, file_bucket: str) -> bool:
+    """Match a persisted declaration partition using only its path evidence."""
+    if not pattern.startswith("swift/") or not file_bucket.startswith("swift/"):
+        return False
+    base = pattern.split(_SWIFT_DECLARATION_SEPARATOR, 1)[0].removesuffix(":swift")
+    return base == file_bucket.removesuffix(":swift")
+
+
 def path_pattern_bucket_for(
     file_path: str,
     archetype_paths: dict[str, list[str]] | None = None,
@@ -483,6 +553,10 @@ def path_pattern_bucket_for(
     records which subdirectories contributed.
     """
     del archetype_paths
+
+    if file_path.endswith(".swift"):
+        bucket = _swift_path_bucket(file_path)
+        return (f"{bucket}:swift" if include_extension else bucket, "")
 
     parts = [p for p in file_path.split("/") if p and p not in (".", "..")]
     if len(parts) < 2:
@@ -725,6 +799,12 @@ def compute_signature(
         archetype_paths,
         include_extension=include_extension_in_bucket,
     )
+    if file_path.endswith(".swift"):
+        declaration_role = swift_declaration_role(top_level_node_kinds) or "unknown"
+        bucket = bucket.removesuffix(":swift")
+        bucket += f"{_SWIFT_DECLARATION_SEPARATOR}{declaration_role}"
+        if include_extension_in_bucket:
+            bucket += ":swift"
     del import_specifiers  # intentionally not part of the cluster key (see below)
     return ClusterKey(
         path_pattern_bucket=bucket,

@@ -1379,6 +1379,8 @@ def _prefix_overlap_fallback(rel_str: str, archetypes: dict) -> tuple[str | None
     """
     from chameleon_mcp.signatures import python_role_for_path
 
+    if rel_str.endswith(".swift"):
+        return None, []
     file_dir = rel_str.rsplit("/", 1)[0] if "/" in rel_str else ""
     file_segments = [s for s in file_dir.split("/") if s]
     file_ext = rel_str.rsplit(".", 1)[-1] if "." in rel_str.rsplit("/", 1)[-1] else ""
@@ -1441,6 +1443,10 @@ def _nearest_canonical_entry(rel_str: str, entries: list, snapshot=None) -> dict
         return {}
     from chameleon_mcp.lint_engine import canonical_confidence
 
+    if rel_str.endswith(".swift"):
+        entries = [e for e in entries if e and _swift_canonical_compatible(rel_str, e, snapshot)]
+        if not entries:
+            return {}
     q_parts = _norm_rel_path(rel_str).split("/")[:-1]
     best = entries[0] or {}
     best_key = (-1.0, -1)
@@ -1467,39 +1473,60 @@ def _nearest_canonical_entry(rel_str: str, entries: list, snapshot=None) -> dict
 
 
 def _file_shape_snapshot(p: Path, loaded):
-    """The edited file's AST dimension snapshot, for shape-aware witness choice.
-
-    Mirrors the content read + language detection in ``_get_archetype_with_loaded``
-    so the shape compared against witness ``ast_query`` is the same one archetype
-    scoring used. Returns None for an absent/unreadable file (the new-file case),
-    so witness selection falls back to path overlap.
-    """
-    from chameleon_mcp.lint_engine import detect_language, extract_dimensions
+    """Read contextual dimensions without enabling extraction-tier lint."""
+    del loaded
+    from chameleon_mcp.lint_engine import DimensionSnapshot, detect_language, extract_dimensions
 
     if not p.is_file():
         return None
+    if p.suffix == ".swift":
+        from chameleon_mcp.extractors.treesitter.extractor import parse_file
+        from chameleon_mcp.signatures import content_signal_match_for
+
+        try:
+            parsed, reason = parse_file(p)
+        except Exception:
+            return None
+        if parsed is None or reason or parsed.parse_diagnostics_count:
+            return None
+        return DimensionSnapshot(
+            top_level_node_kinds=list(parsed.top_level_node_kinds),
+            default_export_kind=parsed.default_export_kind,
+            named_export_count=parsed.named_export_count,
+            jsx_present=parsed.has_jsx,
+            content_signal=content_signal_match_for(parsed.content_first_200_bytes),
+        )
     try:
         content = p.read_bytes()[:100_000].decode("utf-8", errors="replace")
     except OSError:
         return None
-    # The FILE's language, never the profile's. The old fallback to
-    # `loaded.profile["language"]` only fired when the file's own extension was
-    # unrecognized, and on a legacy extension-blind profile (a `paths_pattern`
-    # with no `:ext` tail, still a live compat path above) that is exactly a
-    # foreign file exact-matching a first-class archetype. It then got extracted
-    # under the WRONG language: PHP source read as TypeScript yields
-    # ['ClassDeclaration'] rather than [], and a non-empty snapshot can score a
-    # nonzero `canonical_confidence`, reaching the match_quality="ast" plus
-    # medium/high band that both deny gates require. A wrong-language file could
-    # arm a block. `None` is the honest answer and yields an empty snapshot,
-    # which scores nothing and blocks nothing.
     language = detect_language(str(p))
     if language not in ("typescript", "ruby", "python"):
         language = None
     try:
-        return extract_dimensions(content, language=language)
+        return extract_dimensions(content, language=language, file_path=str(p))
     except Exception:
         return None
+
+
+def _swift_canonical_compatible(rel_str: str, entry: dict, snapshot=None) -> bool:
+    from chameleon_mcp.signatures import (
+        path_pattern_bucket_for,
+        swift_declaration_role,
+    )
+
+    witness_path = _norm_rel_path((entry.get("witness") or {}).get("path") or "")
+    if not witness_path.endswith(".swift"):
+        return False
+    if path_pattern_bucket_for(rel_str)[0] != path_pattern_bucket_for(witness_path)[0]:
+        return False
+    if snapshot is None:
+        return True
+    role = swift_declaration_role(snapshot.top_level_node_kinds)
+    witness_kinds = ((entry.get("normative_shape") or {}).get("ast_query") or {}).get(
+        "top_level_node_kinds"
+    ) or []
+    return role == swift_declaration_role(witness_kinds)
 
 
 def _witness_path_overlap(rel_str: str, canonicals: dict, archetype_name: str) -> int:
@@ -1683,12 +1710,8 @@ def _get_archetype_with_loaded(
     get_pattern_context. Assumes repo_root + a successfully loaded
     profile; does no find_repo_root / load_profile_dir of its own.
     """
-    from chameleon_mcp.lint_engine import (
-        canonical_confidence,
-        detect_language,
-        extract_dimensions,
-    )
-    from chameleon_mcp.signatures import path_pattern_bucket_for
+    from chameleon_mcp.lint_engine import canonical_confidence
+    from chameleon_mcp.signatures import path_pattern_bucket_for, swift_bucket_matches
 
     try:
         p_resolved = p.resolve()
@@ -1713,13 +1736,26 @@ def _get_archetype_with_loaded(
     fallback_matches: list[str] = []
 
     archetypes = loaded.archetypes.get("archetypes", {})
+    is_swift = p.suffix == ".swift"
+    snapshot = _file_shape_snapshot(p, loaded) if is_swift else None
+    canonicals = loaded.canonicals.get("canonicals", {}) or {}
     for name, arch in archetypes.items():
         pattern = arch.get("paths_pattern", "")
         if not pattern:
             continue
-        if pattern == file_bucket or pattern == file_bucket_ext:
+        if is_swift:
+            entries = canonicals.get(name) or []
+            if not any(
+                _swift_canonical_compatible(rel_str, entry, snapshot) for entry in entries if entry
+            ):
+                continue
+        if (
+            pattern == file_bucket
+            or pattern == file_bucket_ext
+            or (is_swift and swift_bucket_matches(pattern, file_bucket))
+        ):
             exact_matches.append(name)
-        elif pattern in rel_str:
+        elif not is_swift and pattern in rel_str:
             fallback_matches.append(name)
 
     if not exact_matches:
@@ -1750,15 +1786,9 @@ def _get_archetype_with_loaded(
         )
     )
 
-    content: str | None = None
-    if p.is_file():
-        try:
-            raw = p.read_bytes()[:100_000]
-            content = raw.decode("utf-8", errors="replace")
-        except OSError:
-            content = None
-
-    if content is None:
+    if not is_swift:
+        snapshot = _file_shape_snapshot(p, loaded)
+    if snapshot is None:
         # Path-pattern-only branding for a file with no readable content — the
         # supported PreToolUse new-file case (the hook fires before the Write
         # creates the file). The band can read "high" on a unique path match,
@@ -1773,30 +1803,17 @@ def _get_archetype_with_loaded(
                 "confidence_band": "high" if len(exact_matches) == 1 else "low",
                 "match_quality": "exact",
                 "match_basis": "path_only",
-                "file_exists": False,
+                "file_exists": p.is_file(),
             }
         )
 
-    # The FILE's language, never the profile's. The old fallback to
-    # `loaded.profile["language"]` only fired when the file's own extension was
-    # unrecognized, and on a legacy extension-blind profile (a `paths_pattern`
-    # with no `:ext` tail, still a live compat path above) that is exactly a
-    # foreign file exact-matching a first-class archetype. It then got extracted
-    # under the WRONG language: PHP source read as TypeScript yields
-    # ['ClassDeclaration'] rather than [], and a non-empty snapshot can score a
-    # nonzero `canonical_confidence`, reaching the match_quality="ast" plus
-    # medium/high band that both deny gates require. A wrong-language file could
-    # arm a block. `None` is the honest answer and yields an empty snapshot,
-    # which scores nothing and blocks nothing.
-    language = detect_language(str(p))
-    if language not in ("typescript", "ruby", "python"):
-        language = None
-    snapshot = extract_dimensions(content, language=language, file_path=str(p))
-
-    canonicals = loaded.canonicals.get("canonicals", {}) or {}
     scored: list[tuple[str, float, int]] = []
     for name in exact_matches:
         entries = canonicals.get(name) or []
+        if is_swift:
+            entries = [
+                e for e in entries if e and _swift_canonical_compatible(rel_str, e, snapshot)
+            ]
         ast_query: dict | None = None
         if entries:
             first = entries[0] or {}
@@ -2283,10 +2300,12 @@ def get_pattern_context(file_path: str) -> dict:
                 rel_str = p.resolve().relative_to(repo_root.resolve()).as_posix()
             except (ValueError, OSError):
                 rel_str = p.name
-            # Only extract the file's shape when there is more than one witness to
-            # choose between (cost-bounded to the multi-sub-bucket case); a single
-            # witness needs no shape comparison.
-            snapshot = _file_shape_snapshot(p, loaded) if len(canonicals) > 1 else None
+            # Swift role compatibility applies even to a sole witness.
+            snapshot = (
+                _file_shape_snapshot(p, loaded)
+                if len(canonicals) > 1 or p.suffix == ".swift"
+                else None
+            )
             # When an archetype has several witnesses, prefer one that still exists
             # on disk: the nearest-by-shape entry may have been deleted/renamed in
             # the working tree, and selecting it would flag the whole archetype's
