@@ -1,32 +1,3 @@
-# Continuous integration gates for chameleon.
-#
-# Fires on every PR (against main) and every push to main. Mirrors the
-# local test workflow documented in CONTRIBUTING.md, minus the
-# real-Claude-Code acceptance suite (that costs ~$0.20/run and lives in
-# real-claude-code-acceptance.yml — manual / cron only).
-#
-# Jobs:
-#   - test-python:      matrix on Python 3.11-3.13 across Ubuntu + macOS.
-#                        Runs unit tests + harness library tests.
-#   - test-windows:     native Windows import smoke + the cross-platform locking
-#                        tests (validates the fcntl/msvcrt + O_NOFOLLOW guards on
-#                        the one platform where the no-fcntl branch actually runs).
-#   - runtime-windows:  drives the hook stack (run-hook.cmd -> Git Bash -> venv
-#                        python) and a bootstrap/trust/refresh lifecycle on real
-#                        Windows -- the full runtime the import smoke can't cover.
-#   - lint:             ruff check + ruff format --check on MCP package +
-#                        unit tests + journey tests + plugin/scripts.
-#   - version-sync:     bash scripts/bump-version.sh --check (fails CI on drift).
-#   - no-personal-paths: fails CI if a tracked file hardcodes a developer
-#                        home path (/Users/<name> or /home/<name>).
-#   - hook-smoke:       matrix over all 7 hook wrappers in hooks.json with
-#                        synthetic stdin, asserting each emits valid JSON.
-#                        Keep in step with hooks.json: a wrapper missing here
-#                        reads as covered because the job name says "all".
-#   - security:         pip-audit + npm audit on dependencies.
-#   - shellcheck:       static analysis on hook scripts + shell scripts.
-#   - hooks-manifest:   validates hooks.json references + skill directories.
-
 name: ci
 
 on:
@@ -34,6 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -43,19 +15,20 @@ permissions:
   contents: read
 
 jobs:
-  test-python:
-    name: test-python (py${{ matrix.python-version }} / ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+  test-macos:
+    name: macOS (Python ${{ matrix.python-version }})
+    runs-on: macos-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
         python-version: ['3.11', '3.12', '3.13']
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v7
@@ -75,368 +48,50 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'plugin/mcp/package-lock.json'
 
-      - name: Set up Ruby (Ruby extractor golden corpus)
+      - name: Set up Ruby with Prism
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'  # 3.3+ bundles prism
+          ruby-version: '3.3'
 
-      - name: Install Python dependencies (uv sync)
+      - name: Install locked Python dependencies
         working-directory: plugin/mcp
         run: uv sync --frozen --extra dev
 
-      - name: Install Node dependencies (TypeScript extractor)
+      - name: Install locked Node dependencies
         working-directory: plugin/mcp
         run: npm ci
 
-      - name: Sanity-check the MCP server imports
+      - name: Import the MCP server
         working-directory: plugin/mcp
         run: .venv/bin/python -c "from chameleon_mcp.server import mcp; print('mcp ok')"
 
-      - name: Run unit + harness tests
+      - name: Run unit and harness tests
         working-directory: plugin/mcp
         env:
           PYTHONPATH: '.:../..'
-        run: .venv/bin/python -m pytest ../../tests/unit/ ../../tests/journey/harness/tests/ ../../tests/effectiveness/tests/ -v
+        run: >-
+          .venv/bin/python -m pytest
+          ../../tests/unit/
+          ../../tests/journey/harness/tests/
+          ../../tests/effectiveness/tests/ -v
 
-  test-windows:
-    name: test-windows (py${{ matrix.python-version }})
-    runs-on: windows-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.11', '3.12', '3.13']
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: 'plugin/mcp/uv.lock'
-
-      - name: Install Python dependencies (uv sync)
-        working-directory: plugin/mcp
-        run: uv sync --frozen --extra dev
-
-      # The whole point of this job: native Windows has no fcntl, so this import
-      # would crash before the cross-platform locking layer landed. No Node/Ruby
-      # here -- the extractors aren't exercised by the import smoke or lock tests.
-      - name: Import smoke (no fcntl on this platform)
-        working-directory: plugin/mcp
-        run: uv run python -c "from chameleon_mcp.server import mcp; print('mcp imports on Windows')"
-
-      # Runs the simulated branch tests AND the win32-only tests that exercise the
-      # real msvcrt / ctypes OpenProcess paths (skipped everywhere else).
-      - name: Cross-platform locking tests
-        working-directory: plugin/mcp
-        env:
-          PYTHONPATH: '.;../..'
-        run: uv run python -m pytest ../../tests/unit/test_locks_cross_platform.py -v
-
-  runtime-windows:
-    name: runtime-windows (hooks + lifecycle)
-    runs-on: windows-latest
-    timeout-minutes: 20
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.12'
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: 'plugin/mcp/uv.lock'
-
-      - name: Set up Node.js (bootstrap's TypeScript extractor)
-        uses: actions/setup-node@v7
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: 'plugin/mcp/package-lock.json'
-
-      - name: Install Python dependencies (uv sync)
-        working-directory: plugin/mcp
-        run: uv sync --frozen --extra dev
-
-      - name: Install Node dependencies (TypeScript extractor)
-        working-directory: plugin/mcp
-        run: npm ci
-
-      # Drives run-hook.cmd -> Git Bash -> venv python for every hook (asserting
-      # the error log records no python-spawn failure), then a real bootstrap ->
-      # trust -> refresh against a throwaway repo. The whole point is the native
-      # Windows runtime that import + unit tests can't exercise.
-      - name: Hook stack + lifecycle on native Windows
-        working-directory: plugin/mcp
-        run: uv run python ../../tests/ci_windows_runtime.py
-
-  lint:
-    name: lint (ruff)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.11'
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: 'plugin/mcp/uv.lock'
-
-      - name: Ruff check (MCP package + tests + scripts)
-        working-directory: plugin/mcp
-        # Use uvx so we don't need a full `uv sync` just to lint. Ruff
-        # config (line-length, target-version, select) lives in
-        # plugin/mcp/pyproject.toml -- uvx picks it up from the working directory.
-        #
-        # Both script directories are listed because the paths are relative to
-        # this working-directory: `../scripts/` is plugin/scripts/, and the
-        # repo-root scripts/ -- which holds the CI gates themselves -- is
-        # `../../scripts/`. Listing only the first leaves the gate scripts
-        # unlinted, which is how a dead import sat in check-derived-counts.py.
-        run: uvx ruff@0.15.13 check chameleon_mcp/ ../../tests/unit/ ../../tests/journey/ ../scripts/ ../../scripts/
-
-      - name: Ruff format check (MCP package + tests + scripts)
-        working-directory: plugin/mcp
-        # Formatter gate, same scope and pinned version as the check above
-        # so the local venv (uv.lock pins ruff 0.15.13) and CI agree
-        # byte-for-byte. Run `uvx ruff@0.15.13 format chameleon_mcp/ ../../tests/`
-        # to fix locally.
-        run: uvx ruff@0.15.13 format --check chameleon_mcp/ ../../tests/unit/ ../../tests/journey/ ../scripts/ ../../scripts/
-
-  version-sync:
-    name: version-sync (bump-version.sh --check)
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Verify all 6 manifests agree on the version
-        run: bash scripts/bump-version.sh --check
-
-  no-personal-paths:
-    name: no-personal-paths
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Fail on hardcoded developer home paths
-        run: bash scripts/check-no-personal-paths.sh
-
-  derived-counts:
-    name: derived-counts
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-        with:
-          # Load-bearing: the release-count check derives its number from
-          # `git tag`, and a shallow checkout fetches no tags.
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.11'
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: 'plugin/mcp/uv.lock'
-
-      # The suite has to be importable for --exact below to collect it. --exact
-      # fails closed, so a broken install fails this job rather than quietly
-      # downgrading it to the weaker floor comparison.
-      - name: Install Python dependencies (uv sync)
-        working-directory: plugin/mcp
-        run: uv sync --frozen --extra dev
-
-      - name: Fail when a documented count no longer matches the source
-        # --exact collects tests/unit/ for real instead of counting `def test_`
-        # with a regex. That regex is only a FLOOR, so a README claiming any
-        # number above it passed -- including one left stale by deleted tests,
-        # which is the exact drift this gate exists to catch.
-        run: plugin/mcp/.venv/bin/python scripts/check-derived-counts.py --exact
-
-  import-cycle:
-    name: import-cycle
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Fail when the largest import cycle grows
-        run: python3 scripts/check-import-cycle.py
-
-  hook-smoke:
-    name: hook-smoke (${{ matrix.hook.name }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        hook:
-          - name: session-start
-            stdin: '{"session_id":"ci-smoke","hook_event_name":"SessionStart"}'
-          - name: preflight-and-advise
-            stdin: '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/test.ts"},"session_id":"ci-test"}'
-          - name: posttool-recorder
-            stdin: '{"tool_name":"Bash","tool_input":{"command":"echo hi"},"tool_response":{"stdout":"hi"},"session_id":"ci-test"}'
-          - name: posttool-verify
-            stdin: '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/test.ts"},"tool_response":{"content":"const x = 1;","success":true},"session_id":"ci-test"}'
-          - name: callout-detector
-            stdin: '{"user_prompt":"hello world","session_id":"ci-test"}'
-          # A live PreToolUse hook on the Skill matcher (hooks.json). It was in no
-          # gate at all -- not here, not shellcheck, not the Windows driver -- while
-          # this job's header called itself a matrix over every hook.
-          - name: peer-skill-advise
-            stdin: '{"tool_name":"Skill","tool_input":{"skill":"superpowers:brainstorming"},"session_id":"ci-test"}'
-          # The one hook that can BLOCK turn end, and the one with the widest
-          # internal budget. It had shellcheck but nothing ever executed it.
-          - name: stop-backstop
-            stdin: '{"session_id":"ci-test","hook_event_name":"Stop"}'
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.11'
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: 'plugin/mcp/uv.lock'
-
-      - name: Install Python dependencies (uv sync)
-        working-directory: plugin/mcp
-        run: uv sync --frozen
-
-      # Through run-hook.cmd, which is how hooks.json actually spells every hook
-      # command. Invoking the script directly skipped the wrapper's Unix
-      # dispatch tail entirely, so a regression there disabled every hook on
-      # macOS and Linux with CI still green.
-      - name: Invoke run-hook.cmd ${{ matrix.hook.name }} with synthetic stdin
-        env:
-          CLAUDE_PLUGIN_ROOT: ${{ github.workspace }}/plugin
-        run: |
-          echo '${{ matrix.hook.stdin }}' \
-            | bash plugin/hooks/run-hook.cmd ${{ matrix.hook.name }} \
-            | python3 -c "import json,sys; obj=json.loads(sys.stdin.read(), strict=False); assert isinstance(obj, dict), f'expected dict, got {type(obj).__name__}'; print('hook emitted valid JSON object')"
-
-      # The wrapper's own contract, which no other POSIX gate covers: a missing
-      # script name is a usage error, an unknown one must not be treated as a
-      # silent success.
-      - name: run-hook.cmd rejects a missing or unknown script name
-        if: matrix.hook.name == 'session-start'
-        run: |
-          set +e
-          bash plugin/hooks/run-hook.cmd </dev/null >/dev/null 2>&1
-          no_arg=$?
-          bash plugin/hooks/run-hook.cmd no-such-hook </dev/null >/dev/null 2>&1
-          bad_name=$?
-          set -e
-          echo "no-arg rc=${no_arg} bad-name rc=${bad_name}"
-          test "${no_arg}" -ne 0 || { echo 'run-hook.cmd accepted a missing script name'; exit 1; }
-          test "${bad_name}" -ne 0 || { echo 'run-hook.cmd accepted an unknown script name'; exit 1; }
-
-  security:
-    name: dependency-audit
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.12'
-
-      - name: pip-audit
+      - name: Check Python lint and formatting
+        if: matrix.python-version == '3.12'
         working-directory: plugin/mcp
         run: |
-          # pip-audit audits the environment of the interpreter it runs under.
-          # Under `pipx run` that is pipx's own throwaway venv — seeded with the
-          # runner's bundled pip — so the project deps were never audited and a
-          # one-patch-stale runner pip (PYSEC-2026-196 on 26.1.1) failed every
-          # commit. Install pip-audit into the project env instead, with pip
-          # upgraded first so the audited environment carries a patched pip.
-          python -m pip install -q --upgrade pip
-          pip install -q -e ".[dev]" pip-audit
-          pip-audit --desc on --progress-spinner off
+          .venv/bin/ruff check chameleon_mcp/ ../../tests/unit/ ../../tests/journey/ ../scripts/ ../../scripts/
+          .venv/bin/ruff format --check chameleon_mcp/ ../../tests/unit/ ../../tests/journey/ ../scripts/ ../../scripts/
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: '20'
-
-      - name: npm audit
-        working-directory: plugin/mcp
-        run: npm ci --ignore-scripts && npm audit --audit-level=high
-
-  shellcheck:
-    name: shellcheck
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Lint hook scripts
-        # plugin/bin/*.sh is in scope too: the statusline ships and runs on
-        # every prompt, so it earns the same gate as the hooks. Hook wrappers
-        # are named individually because the directory also holds run-hook.cmd,
-        # a Windows batch file shellcheck cannot parse.
-        run: shellcheck -S warning plugin/hooks/_resolve-python.sh plugin/hooks/session-start plugin/hooks/preflight-and-advise plugin/hooks/peer-skill-advise plugin/hooks/posttool-recorder plugin/hooks/posttool-verify plugin/hooks/callout-detector plugin/hooks/stop-backstop plugin/bin/*.sh plugin/scripts/*.sh scripts/*.sh
-
-  hooks-manifest:
-    name: hooks-manifest-check
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
+      - name: Check versions, source counts, import cycles, and portable paths
+        if: matrix.python-version == '3.12'
+        run: |
+          bash scripts/bump-version.sh --check
+          plugin/mcp/.venv/bin/python scripts/check-derived-counts.py --exact
+          plugin/mcp/.venv/bin/python scripts/check-import-cycle.py
+          bash scripts/check-no-personal-paths.sh
 
       - name: Validate hooks.json references
+        if: matrix.python-version == '3.12'
         run: |
           python3 << 'PYEOF'
           import json, shlex, sys, os

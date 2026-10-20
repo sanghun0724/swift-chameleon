@@ -1,6 +1,6 @@
 # SwiftChameleon implementation review
 
-Review scope is base `00c79270` plus the current working tree in `/Users/brady/Desktop/open-source/swift-chameleon`. Read-only source review covered the Swift parser and detector, signature partitions, runtime context selection, substantive history and fallback, and independent plugin identity. I read `docs/swift/PLAN.md` and `docs/swift/plan-review.md`. Probes used isolated generated Swift strings and temporary directories. No company source was read or copied.
+Review scope is base `00c79270` plus the current working tree in `/Users/you/Desktop/open-source/swift-chameleon`. Read-only source review covered the Swift parser and detector, signature partitions, runtime context selection, substantive history and fallback, and independent plugin identity. I read `docs/swift/PLAN.md` and `docs/swift/plan-review.md`. Probes used isolated generated Swift strings and temporary directories. No company source was read or copied.
 
 The Prove It Works principle changed the review method. Findings below were reproduced through the actual `parse_file` and runtime archetype resolver rather than inferred only from code. The parent owns product journey and regression suite execution.
 
