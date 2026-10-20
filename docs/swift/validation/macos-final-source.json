@@ -1,0 +1,25 @@
+{
+  "run_url": "https://github.com/sanghun0724/swift-chameleon/actions/runs/39459681285",
+  "head_sha": "593245cf6169f1ce7f093fdc72582be919dc0097",
+  "status": "completed",
+  "conclusion": "success",
+  "jobs": [
+    {
+      "name": "macOS (Python 3.11)",
+      "conclusion": "success"
+    },
+    {
+      "name": "macOS (Python 3.13)",
+      "conclusion": "success"
+    },
+    {
+      "name": "macOS (Python 3.12)",
+      "conclusion": "success"
+    }
+  ],
+  "suite_result_per_job": {
+    "passed": 7678,
+    "skipped": 5
+  },
+  "counts_source": "GitHub Actions pytest logs, independently extracted by macOS CI worker"
+}

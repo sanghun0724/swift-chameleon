@@ -102,3 +102,5 @@ The study froze adapter SHA256 `d4cb18223ae991808279801ba69bfa75cd3aff70695c0011
 ### macOS CI
 
 The [macOS baseline run](https://github.com/sanghun0724/swift-chameleon/actions/runs/39455246446) passed on Python 3.11, 3.12 and 3.13, each with 7,637 passed and 5 skipped. These are repetitions of the same suite, not independent tests to sum. The final integration run is recorded after the generation-runner review and publication checkpoint. Windows and Linux validation is skipped at the user's request.
+
+The [final source integration run](https://github.com/sanghun0724/swift-chameleon/actions/runs/39459681285), head `593245cf6169f1ce7f093fdc72582be919dc0097`, completed successfully on all three macOS Python versions. Each job reported **7,678 passed and 5 skipped**. This includes the 27 native-adapter tests and 14 new generation-harness tests. Ruff, formatting, versions, derived counts, import cycles, portable paths, and manifest references passed. The [API summary](validation/macos-final-source.json) records the tested head and job conclusions. The subsequent commit records CI evidence only and changes no product code.

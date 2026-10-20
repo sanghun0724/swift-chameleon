@@ -31,6 +31,6 @@ Inspect the existing language tables and reuse the profile/context pipeline. Par
 - [x] Review every generated change and obtain a blinded independent judgment.
 - [x] Fix adapter boundary findings after the frozen trial ends.
 - [x] Publish results with evidence, uncertainty, and reproducible commands.
-- [ ] Run the final macOS CI matrix and push the reviewed integration.
+- [x] Run the final macOS CI matrix and push the reviewed integration.
 
 Cross-platform CLI validation is skipped at the user's request. Generation uses Codex only.
