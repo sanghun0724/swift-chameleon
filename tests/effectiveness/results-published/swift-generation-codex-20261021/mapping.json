@@ -1,0 +1,122 @@
+[
+  {
+    "arm": "A",
+    "label": "sample-03",
+    "repeat": 1,
+    "task": "shipping"
+  },
+  {
+    "arm": "B",
+    "label": "sample-09",
+    "repeat": 1,
+    "task": "shipping"
+  },
+  {
+    "arm": "B",
+    "label": "sample-12",
+    "repeat": 2,
+    "task": "shipping"
+  },
+  {
+    "arm": "A",
+    "label": "sample-05",
+    "repeat": 2,
+    "task": "shipping"
+  },
+  {
+    "arm": "A",
+    "label": "sample-15",
+    "repeat": 3,
+    "task": "shipping"
+  },
+  {
+    "arm": "B",
+    "label": "sample-16",
+    "repeat": 3,
+    "task": "shipping"
+  },
+  {
+    "arm": "B",
+    "label": "sample-02",
+    "repeat": 4,
+    "task": "shipping"
+  },
+  {
+    "arm": "A",
+    "label": "sample-20",
+    "repeat": 4,
+    "task": "shipping"
+  },
+  {
+    "arm": "A",
+    "label": "sample-10",
+    "repeat": 5,
+    "task": "shipping"
+  },
+  {
+    "arm": "B",
+    "label": "sample-07",
+    "repeat": 5,
+    "task": "shipping"
+  },
+  {
+    "arm": "B",
+    "label": "sample-08",
+    "repeat": 1,
+    "task": "pickup"
+  },
+  {
+    "arm": "A",
+    "label": "sample-04",
+    "repeat": 1,
+    "task": "pickup"
+  },
+  {
+    "arm": "A",
+    "label": "sample-14",
+    "repeat": 2,
+    "task": "pickup"
+  },
+  {
+    "arm": "B",
+    "label": "sample-11",
+    "repeat": 2,
+    "task": "pickup"
+  },
+  {
+    "arm": "B",
+    "label": "sample-06",
+    "repeat": 3,
+    "task": "pickup"
+  },
+  {
+    "arm": "A",
+    "label": "sample-17",
+    "repeat": 3,
+    "task": "pickup"
+  },
+  {
+    "arm": "A",
+    "label": "sample-19",
+    "repeat": 4,
+    "task": "pickup"
+  },
+  {
+    "arm": "B",
+    "label": "sample-01",
+    "repeat": 4,
+    "task": "pickup"
+  },
+  {
+    "arm": "B",
+    "label": "sample-13",
+    "repeat": 5,
+    "task": "pickup"
+  },
+  {
+    "arm": "A",
+    "label": "sample-18",
+    "repeat": 5,
+    "task": "pickup"
+  }
+]

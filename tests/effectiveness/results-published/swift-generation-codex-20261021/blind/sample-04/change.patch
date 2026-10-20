@@ -1,0 +1,182 @@
+diff --git a/Package.swift b/Package.swift
+index 740274a..2dc5440 100644
+--- a/Package.swift
++++ b/Package.swift
+@@ -1,3 +1,3 @@
+ // swift-tools-version: 6.0
+ import PackageDescription
+-let package = Package(name: "CedarStore", products: [.library(name: "CedarStore", targets: ["CedarStore"])], targets: [.target(name: "CedarStore")])
++let package = Package(name: "CedarStore", products: [.library(name: "CedarStore", targets: ["CedarStore"])], targets: [.target(name: "CedarStore"), .testTarget(name: "CedarStoreTests", dependencies: ["CedarStore"])])
+diff --git a/Sources/CedarStore/Composition/StoreGraph.swift b/Sources/CedarStore/Composition/StoreGraph.swift
+index 5e85604..3bc843e 100644
+--- a/Sources/CedarStore/Composition/StoreGraph.swift
++++ b/Sources/CedarStore/Composition/StoreGraph.swift
+@@ -14,4 +14,8 @@ struct StoreGraph {
+     var loadBasketName: LoadBasketNameUseCase {
+         LoadBasketNameUseCase(repository: LiveBasketNameRepository(api: api))
+     }
++
++    var loadPickupLocations: LoadPickupLocationsUseCase {
++        LoadPickupLocationsUseCase(repository: LivePickupLocationsRepository(api: api))
++    }
+ }
+diff --git a/Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift b/Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift
+new file mode 100644
+index 0000000..96f54b7
+--- /dev/null
++++ b/Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift
+@@ -0,0 +1,9 @@
++struct LivePickupLocationsRepository: PickupLocationsRepository {
++    private let api: any ShopAPI
++
++    init(api: any ShopAPI) { self.api = api }
++
++    func load(postcode: String) async -> ShopResult<[PickupLocation]> {
++        await api.pickupLocations(postcode: postcode).domain { PickupCatalog.available($0) }
++    }
++}
+diff --git a/Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift b/Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift
+new file mode 100644
+index 0000000..7922a76
+--- /dev/null
++++ b/Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift
+@@ -0,0 +1,3 @@
++protocol PickupLocationsRepository {
++    func load(postcode: String) async -> ShopResult<[PickupLocation]>
++}
+diff --git a/Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift b/Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift
+new file mode 100644
+index 0000000..e3007d9
+--- /dev/null
++++ b/Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift
+@@ -0,0 +1,14 @@
++import Foundation
++
++struct LoadPickupLocationsUseCase {
++    private let repository: any PickupLocationsRepository
++
++    init(repository: any PickupLocationsRepository) { self.repository = repository }
++
++    func execute(postcode: String) async -> ShopResult<[PickupLocation]> {
++        guard !postcode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
++            return .issue(.invalidIdentifier)
++        }
++        return await repository.load(postcode: postcode)
++    }
++}
+diff --git a/Tests/CedarStoreTests/PickupLocationsTests.swift b/Tests/CedarStoreTests/PickupLocationsTests.swift
+new file mode 100644
+index 0000000..5e89d01
+--- /dev/null
++++ b/Tests/CedarStoreTests/PickupLocationsTests.swift
+@@ -0,0 +1,110 @@
++import Testing
++@testable import CedarStore
++
++struct PickupLocationsTests {
++    @Test func blankPostcodesDoNotCallAPI() async {
++        let api = StubShopAPI()
++        let graph = StoreGraph(api: api)
++
++        for postcode in ["", " ", "\t\r\n", "\u{2003}"] {
++            assertIssue(await graph.loadPickupLocations.execute(postcode: postcode), .invalidIdentifier)
++        }
++        #expect(api.postcodes.isEmpty)
++    }
++
++    @Test func forwardsPostcodeAndReturnsFirstEligibleLocationsInOrder() async {
++        let api = StubShopAPI()
++        api.pickupReply = .payload([
++            .init(id: "a", title: "Inactive", capacity: 5, active: false),
++            .init(id: "a", title: "Negative", capacity: -1, active: true),
++            .init(id: "z", title: "Zulu", capacity: 2, active: true),
++            .init(id: "b", title: "Alpha", capacity: 3, active: true),
++            .init(id: "a", title: "Alpha", capacity: 0, active: true),
++            .init(id: "a", title: "Duplicate", capacity: 9, active: true),
++            .init(id: "x", title: "Excluded", capacity: -1, active: true),
++            .init(id: "y", title: "Excluded", capacity: 1, active: false),
++        ])
++
++        let result = await StoreGraph(api: api).loadPickupLocations.execute(postcode: "  AB12 \n")
++
++        #expect(api.postcodes == ["  AB12 \n"])
++        guard case .value(let locations) = result else {
++            Issue.record("Expected pickup locations")
++            return
++        }
++        #expect(locations == [
++            PickupLocation(id: "a", title: "Alpha", capacity: 0),
++            PickupLocation(id: "b", title: "Alpha", capacity: 3),
++            PickupLocation(id: "z", title: "Zulu", capacity: 2),
++        ])
++    }
++
++    @Test func emptyCatalogsSucceed() async {
++        let api = StubShopAPI()
++        for rows: [PickupLocationDTO] in [
++            [],
++            [.init(id: "a", title: "Inactive", capacity: 0, active: false)],
++        ] {
++            api.pickupReply = .payload(rows)
++            let result = await StoreGraph(api: api).loadPickupLocations.execute(postcode: "123")
++            guard case .value(let locations) = result else {
++                Issue.record("Expected an empty successful catalog")
++                continue
++            }
++            #expect(locations.isEmpty)
++        }
++    }
++
++    @Test func transportFailuresKeepTheirDomainMapping() async {
++        let api = StubShopAPI()
++        let graph = StoreGraph(api: api)
++        api.pickupReply = .failure(.offline)
++        assertIssue(await graph.loadPickupLocations.execute(postcode: "123"), .unavailable)
++        api.pickupReply = .failure(.forbidden)
++        assertIssue(await graph.loadPickupLocations.execute(postcode: "123"), .unauthorized)
++    }
++
++    @Test func existingGraphFeaturesStillWork() async {
++        let graph = StoreGraph(api: StubShopAPI())
++        let results = [
++            await graph.loadOrderSummary.execute(id: "order"),
++            await graph.loadAccountName.execute(id: "account"),
++            await graph.loadBasketName.execute(id: "basket"),
++        ]
++        for result in results {
++            guard case .value(let value) = result else {
++                Issue.record("Expected existing feature to succeed")
++                continue
++            }
++            #expect(value == "Existing value")
++        }
++        assertIssue(await graph.loadOrderSummary.execute(id: " "), .invalidIdentifier)
++        assertIssue(await graph.loadAccountName.execute(id: " "), .invalidIdentifier)
++        assertIssue(await graph.loadBasketName.execute(id: " "), .invalidIdentifier)
++    }
++}
++
++private func assertIssue<Value>(_ result: ShopResult<Value>, _ expected: ShopIssue) {
++    guard case .issue(let issue) = result else {
++        Issue.record("Expected issue \(expected)")
++        return
++    }
++    #expect(issue == expected)
++}
++
++private final class StubShopAPI: ShopAPI {
++    var postcodes: [String] = []
++    var pickupReply: TransportReply<[PickupLocationDTO]> = .payload([])
++
++    func pickupLocations(postcode: String) async -> TransportReply<[PickupLocationDTO]> {
++        postcodes.append(postcode)
++        return pickupReply
++    }
++
++    func orderSummary(id: String) async -> TransportReply<String> { .payload("Existing value") }
++    func accountName(id: String) async -> TransportReply<String> { .payload("Existing value") }
++    func basketName(id: String) async -> TransportReply<String> { .payload("Existing value") }
++    func shippingQuote(orderID: String) async -> TransportReply<ShippingQuoteDTO> {
++        .payload(.init(cents: 0, currency: "USD"))
++    }
++}

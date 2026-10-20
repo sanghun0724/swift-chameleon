@@ -1,0 +1,6 @@
+{
+  "tests/effectiveness/swift_generation.py": "68896659d9b3b0f708a694c457b56f578c0b6839f0aaa7de570745b4eb8227c0",
+  "tests/effectiveness/swift_generation_fixture.py": "d2622d3b809273df7e46356963c1f9cee233f63fea3628e6d668effb5abedd97",
+  "docs/swift/generation-design.md": "75c56303259cec6748edbdf9b7b6771c0d9785a3215a2c935797ddd7671d96d3",
+  "adapter_sha256": "d4cb18223ae991808279801ba69bfa75cd3aff70695c001159757e68a20e2799"
+}

@@ -1,0 +1,1520 @@
+{
+  "cells": [
+    {
+      "arm": "A",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": false,
+      "duration_seconds": 83.166,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift"
+      ],
+      "label": "sample-03",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "Add shipping quotes to CedarStore. Expose StoreGraph.quoteShipping.execute(orderID:) async -> ShopResult<ShippingQuote>. Use ShopAPI.shippingQuote(orderID:). A quote must preserve cents and currency; negative cents or empty currency means invalidPayload. A blank or whitespace-only order ID means invalidIdentifier without calling the API. Forward a nonblank ID unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 0,
+      "pretool_invocations": 0,
+      "repeat": 1,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "shipping",
+      "terminal_reason": "completed",
+      "tool_events": 6,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 198144,
+        "input_tokens": 232641,
+        "output_tokens": 2179,
+        "reasoning_output_tokens": 38
+      }
+    },
+    {
+      "arm": "B",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": true,
+      "duration_seconds": 61.312,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift"
+      ],
+      "label": "sample-09",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "--dangerously-bypass-hook-trust",
+        "-c",
+        "features.hooks=true",
+        "-c",
+        "hooks.SessionStart=[{ hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "-c",
+        "hooks.PreToolUse=[{ matcher = \"^apply_patch$\", hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "Add shipping quotes to CedarStore. Expose StoreGraph.quoteShipping.execute(orderID:) async -> ShopResult<ShippingQuote>. Use ShopAPI.shippingQuote(orderID:). A quote must preserve cents and currency; negative cents or empty currency means invalidPayload. A blank or whitespace-only order ID means invalidIdentifier without calling the API. Forward a nonblank ID unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 1,
+      "pretool_invocations": 1,
+      "repeat": 1,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "shipping",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 159744,
+        "input_tokens": 189992,
+        "output_tokens": 1821,
+        "reasoning_output_tokens": 6
+      }
+    },
+    {
+      "arm": "B",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": true,
+      "duration_seconds": 70.223,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift"
+      ],
+      "label": "sample-12",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "--dangerously-bypass-hook-trust",
+        "-c",
+        "features.hooks=true",
+        "-c",
+        "hooks.SessionStart=[{ hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "-c",
+        "hooks.PreToolUse=[{ matcher = \"^apply_patch$\", hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "Add shipping quotes to CedarStore. Expose StoreGraph.quoteShipping.execute(orderID:) async -> ShopResult<ShippingQuote>. Use ShopAPI.shippingQuote(orderID:). A quote must preserve cents and currency; negative cents or empty currency means invalidPayload. A blank or whitespace-only order ID means invalidIdentifier without calling the API. Forward a nonblank ID unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 1,
+      "pretool_invocations": 1,
+      "repeat": 2,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "shipping",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 177536,
+        "input_tokens": 191907,
+        "output_tokens": 2034,
+        "reasoning_output_tokens": 6
+      }
+    },
+    {
+      "arm": "A",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": false,
+      "duration_seconds": 61.87,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift"
+      ],
+      "label": "sample-05",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "Add shipping quotes to CedarStore. Expose StoreGraph.quoteShipping.execute(orderID:) async -> ShopResult<ShippingQuote>. Use ShopAPI.shippingQuote(orderID:). A quote must preserve cents and currency; negative cents or empty currency means invalidPayload. A blank or whitespace-only order ID means invalidIdentifier without calling the API. Forward a nonblank ID unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 0,
+      "pretool_invocations": 0,
+      "repeat": 2,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "shipping",
+      "terminal_reason": "completed",
+      "tool_events": 6,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 175616,
+        "input_tokens": 204553,
+        "output_tokens": 2060,
+        "reasoning_output_tokens": 76
+      }
+    },
+    {
+      "arm": "A",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": false,
+      "duration_seconds": 68.472,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift"
+      ],
+      "label": "sample-15",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "Add shipping quotes to CedarStore. Expose StoreGraph.quoteShipping.execute(orderID:) async -> ShopResult<ShippingQuote>. Use ShopAPI.shippingQuote(orderID:). A quote must preserve cents and currency; negative cents or empty currency means invalidPayload. A blank or whitespace-only order ID means invalidIdentifier without calling the API. Forward a nonblank ID unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 0,
+      "pretool_invocations": 0,
+      "repeat": 3,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "shipping",
+      "terminal_reason": "completed",
+      "tool_events": 6,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 174592,
+        "input_tokens": 203466,
+        "output_tokens": 2162,
+        "reasoning_output_tokens": 12
+      }
+    },
+    {
+      "arm": "B",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": true,
+      "duration_seconds": 62.17,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift"
+      ],
+      "label": "sample-16",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "--dangerously-bypass-hook-trust",
+        "-c",
+        "features.hooks=true",
+        "-c",
+        "hooks.SessionStart=[{ hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "-c",
+        "hooks.PreToolUse=[{ matcher = \"^apply_patch$\", hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "Add shipping quotes to CedarStore. Expose StoreGraph.quoteShipping.execute(orderID:) async -> ShopResult<ShippingQuote>. Use ShopAPI.shippingQuote(orderID:). A quote must preserve cents and currency; negative cents or empty currency means invalidPayload. A blank or whitespace-only order ID means invalidIdentifier without calling the API. Forward a nonblank ID unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 1,
+      "pretool_invocations": 1,
+      "repeat": 3,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "shipping",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 159872,
+        "input_tokens": 190210,
+        "output_tokens": 1864,
+        "reasoning_output_tokens": 39
+      }
+    },
+    {
+      "arm": "B",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": true,
+      "duration_seconds": 71.358,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift"
+      ],
+      "label": "sample-02",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "--dangerously-bypass-hook-trust",
+        "-c",
+        "features.hooks=true",
+        "-c",
+        "hooks.SessionStart=[{ hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "-c",
+        "hooks.PreToolUse=[{ matcher = \"^apply_patch$\", hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "Add shipping quotes to CedarStore. Expose StoreGraph.quoteShipping.execute(orderID:) async -> ShopResult<ShippingQuote>. Use ShopAPI.shippingQuote(orderID:). A quote must preserve cents and currency; negative cents or empty currency means invalidPayload. A blank or whitespace-only order ID means invalidIdentifier without calling the API. Forward a nonblank ID unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 1,
+      "pretool_invocations": 1,
+      "repeat": 4,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "shipping",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 188672,
+        "input_tokens": 219118,
+        "output_tokens": 1878,
+        "reasoning_output_tokens": 18
+      }
+    },
+    {
+      "arm": "A",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": false,
+      "duration_seconds": 64.313,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift"
+      ],
+      "label": "sample-20",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "Add shipping quotes to CedarStore. Expose StoreGraph.quoteShipping.execute(orderID:) async -> ShopResult<ShippingQuote>. Use ShopAPI.shippingQuote(orderID:). A quote must preserve cents and currency; negative cents or empty currency means invalidPayload. A blank or whitespace-only order ID means invalidIdentifier without calling the API. Forward a nonblank ID unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 0,
+      "pretool_invocations": 0,
+      "repeat": 4,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "shipping",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 158848,
+        "input_tokens": 189503,
+        "output_tokens": 1856,
+        "reasoning_output_tokens": 14
+      }
+    },
+    {
+      "arm": "A",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": false,
+      "duration_seconds": 67.337,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift"
+      ],
+      "label": "sample-10",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "Add shipping quotes to CedarStore. Expose StoreGraph.quoteShipping.execute(orderID:) async -> ShopResult<ShippingQuote>. Use ShopAPI.shippingQuote(orderID:). A quote must preserve cents and currency; negative cents or empty currency means invalidPayload. A blank or whitespace-only order ID means invalidIdentifier without calling the API. Forward a nonblank ID unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 0,
+      "pretool_invocations": 0,
+      "repeat": 5,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "shipping",
+      "terminal_reason": "completed",
+      "tool_events": 6,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 204672,
+        "input_tokens": 219787,
+        "output_tokens": 2173,
+        "reasoning_output_tokens": 9
+      }
+    },
+    {
+      "arm": "B",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": true,
+      "duration_seconds": 68.124,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift"
+      ],
+      "label": "sample-07",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "--dangerously-bypass-hook-trust",
+        "-c",
+        "features.hooks=true",
+        "-c",
+        "hooks.SessionStart=[{ hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "-c",
+        "hooks.PreToolUse=[{ matcher = \"^apply_patch$\", hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "Add shipping quotes to CedarStore. Expose StoreGraph.quoteShipping.execute(orderID:) async -> ShopResult<ShippingQuote>. Use ShopAPI.shippingQuote(orderID:). A quote must preserve cents and currency; negative cents or empty currency means invalidPayload. A blank or whitespace-only order ID means invalidIdentifier without calling the API. Forward a nonblank ID unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 1,
+      "pretool_invocations": 2,
+      "repeat": 5,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "shipping",
+      "terminal_reason": "completed",
+      "tool_events": 6,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 187264,
+        "input_tokens": 217810,
+        "output_tokens": 1927,
+        "reasoning_output_tokens": 31
+      }
+    },
+    {
+      "arm": "B",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": true,
+      "duration_seconds": 72.062,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift"
+      ],
+      "label": "sample-08",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "--dangerously-bypass-hook-trust",
+        "-c",
+        "features.hooks=true",
+        "-c",
+        "hooks.SessionStart=[{ hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "-c",
+        "hooks.PreToolUse=[{ matcher = \"^apply_patch$\", hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "Add pickup location discovery to CedarStore. Expose StoreGraph.loadPickupLocations.execute(postcode:) async -> ShopResult<[PickupLocation]>. Use ShopAPI.pickupLocations(postcode:). Return active locations with nonnegative capacity, keeping the first eligible entry for each ID, ordered by ascending title with ID as the tie breaker. A blank or whitespace-only postcode means invalidIdentifier without calling the API. Forward a nonblank postcode unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 1,
+      "pretool_invocations": 1,
+      "repeat": 1,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "pickup",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 190336,
+        "input_tokens": 221395,
+        "output_tokens": 2160,
+        "reasoning_output_tokens": 44
+      }
+    },
+    {
+      "arm": "A",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": false,
+      "duration_seconds": 70.302,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift"
+      ],
+      "label": "sample-04",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "Add pickup location discovery to CedarStore. Expose StoreGraph.loadPickupLocations.execute(postcode:) async -> ShopResult<[PickupLocation]>. Use ShopAPI.pickupLocations(postcode:). Return active locations with nonnegative capacity, keeping the first eligible entry for each ID, ordered by ascending title with ID as the tie breaker. A blank or whitespace-only postcode means invalidIdentifier without calling the API. Forward a nonblank postcode unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 0,
+      "pretool_invocations": 0,
+      "repeat": 1,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "pickup",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 149632,
+        "input_tokens": 177943,
+        "output_tokens": 2256,
+        "reasoning_output_tokens": 35
+      }
+    },
+    {
+      "arm": "A",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": false,
+      "duration_seconds": 78.559,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift"
+      ],
+      "label": "sample-14",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "Add pickup location discovery to CedarStore. Expose StoreGraph.loadPickupLocations.execute(postcode:) async -> ShopResult<[PickupLocation]>. Use ShopAPI.pickupLocations(postcode:). Return active locations with nonnegative capacity, keeping the first eligible entry for each ID, ordered by ascending title with ID as the tie breaker. A blank or whitespace-only postcode means invalidIdentifier without calling the API. Forward a nonblank postcode unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 0,
+      "pretool_invocations": 0,
+      "repeat": 2,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "pickup",
+      "terminal_reason": "completed",
+      "tool_events": 6,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 175616,
+        "input_tokens": 204604,
+        "output_tokens": 2341,
+        "reasoning_output_tokens": 21
+      }
+    },
+    {
+      "arm": "B",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": true,
+      "duration_seconds": 74.616,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift"
+      ],
+      "label": "sample-11",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "--dangerously-bypass-hook-trust",
+        "-c",
+        "features.hooks=true",
+        "-c",
+        "hooks.SessionStart=[{ hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "-c",
+        "hooks.PreToolUse=[{ matcher = \"^apply_patch$\", hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "Add pickup location discovery to CedarStore. Expose StoreGraph.loadPickupLocations.execute(postcode:) async -> ShopResult<[PickupLocation]>. Use ShopAPI.pickupLocations(postcode:). Return active locations with nonnegative capacity, keeping the first eligible entry for each ID, ordered by ascending title with ID as the tie breaker. A blank or whitespace-only postcode means invalidIdentifier without calling the API. Forward a nonblank postcode unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 1,
+      "pretool_invocations": 1,
+      "repeat": 2,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "pickup",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 161152,
+        "input_tokens": 191851,
+        "output_tokens": 2255,
+        "reasoning_output_tokens": 22
+      }
+    },
+    {
+      "arm": "B",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": true,
+      "duration_seconds": 72.947,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift"
+      ],
+      "label": "sample-06",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "--dangerously-bypass-hook-trust",
+        "-c",
+        "features.hooks=true",
+        "-c",
+        "hooks.SessionStart=[{ hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "-c",
+        "hooks.PreToolUse=[{ matcher = \"^apply_patch$\", hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "Add pickup location discovery to CedarStore. Expose StoreGraph.loadPickupLocations.execute(postcode:) async -> ShopResult<[PickupLocation]>. Use ShopAPI.pickupLocations(postcode:). Return active locations with nonnegative capacity, keeping the first eligible entry for each ID, ordered by ascending title with ID as the tie breaker. A blank or whitespace-only postcode means invalidIdentifier without calling the API. Forward a nonblank postcode unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 1,
+      "pretool_invocations": 1,
+      "repeat": 3,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "pickup",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 165120,
+        "input_tokens": 196714,
+        "output_tokens": 2246,
+        "reasoning_output_tokens": 6
+      }
+    },
+    {
+      "arm": "A",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": false,
+      "duration_seconds": 68.886,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift"
+      ],
+      "label": "sample-17",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "Add pickup location discovery to CedarStore. Expose StoreGraph.loadPickupLocations.execute(postcode:) async -> ShopResult<[PickupLocation]>. Use ShopAPI.pickupLocations(postcode:). Return active locations with nonnegative capacity, keeping the first eligible entry for each ID, ordered by ascending title with ID as the tie breaker. A blank or whitespace-only postcode means invalidIdentifier without calling the API. Forward a nonblank postcode unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 0,
+      "pretool_invocations": 0,
+      "repeat": 3,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "pickup",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 150272,
+        "input_tokens": 178940,
+        "output_tokens": 2262,
+        "reasoning_output_tokens": 9
+      }
+    },
+    {
+      "arm": "A",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": false,
+      "duration_seconds": 66.197,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift"
+      ],
+      "label": "sample-19",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "Add pickup location discovery to CedarStore. Expose StoreGraph.loadPickupLocations.execute(postcode:) async -> ShopResult<[PickupLocation]>. Use ShopAPI.pickupLocations(postcode:). Return active locations with nonnegative capacity, keeping the first eligible entry for each ID, ordered by ascending title with ID as the tie breaker. A blank or whitespace-only postcode means invalidIdentifier without calling the API. Forward a nonblank postcode unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 0,
+      "pretool_invocations": 0,
+      "repeat": 4,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "pickup",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 150528,
+        "input_tokens": 179123,
+        "output_tokens": 2212,
+        "reasoning_output_tokens": 16
+      }
+    },
+    {
+      "arm": "B",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": true,
+      "duration_seconds": 76.393,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift"
+      ],
+      "label": "sample-01",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "--dangerously-bypass-hook-trust",
+        "-c",
+        "features.hooks=true",
+        "-c",
+        "hooks.SessionStart=[{ hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "-c",
+        "hooks.PreToolUse=[{ matcher = \"^apply_patch$\", hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "Add pickup location discovery to CedarStore. Expose StoreGraph.loadPickupLocations.execute(postcode:) async -> ShopResult<[PickupLocation]>. Use ShopAPI.pickupLocations(postcode:). Return active locations with nonnegative capacity, keeping the first eligible entry for each ID, ordered by ascending title with ID as the tie breaker. A blank or whitespace-only postcode means invalidIdentifier without calling the API. Forward a nonblank postcode unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 1,
+      "pretool_invocations": 2,
+      "repeat": 4,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "pickup",
+      "terminal_reason": "completed",
+      "tool_events": 7,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 216064,
+        "input_tokens": 247119,
+        "output_tokens": 2219,
+        "reasoning_output_tokens": 17
+      }
+    },
+    {
+      "arm": "B",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": true,
+      "duration_seconds": 77.17,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift"
+      ],
+      "label": "sample-13",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "--dangerously-bypass-hook-trust",
+        "-c",
+        "features.hooks=true",
+        "-c",
+        "hooks.SessionStart=[{ hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "-c",
+        "hooks.PreToolUse=[{ matcher = \"^apply_patch$\", hooks = [{ type = \"command\", command = \"/opt/swift-chameleon/plugin/mcp/.venv/bin/python -m chameleon_mcp.codex_hooks --trace /state/delivery.jsonl\", timeout = 30, additionalContextLimit = 24000 }] }]",
+        "Add pickup location discovery to CedarStore. Expose StoreGraph.loadPickupLocations.execute(postcode:) async -> ShopResult<[PickupLocation]>. Use ShopAPI.pickupLocations(postcode:). Return active locations with nonnegative capacity, keeping the first eligible entry for each ID, ordered by ascending title with ID as the tie breaker. A blank or whitespace-only postcode means invalidIdentifier without calling the API. Forward a nonblank postcode unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 1,
+      "pretool_invocations": 2,
+      "repeat": 5,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "pickup",
+      "terminal_reason": "completed",
+      "tool_events": 7,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 217984,
+        "input_tokens": 249331,
+        "output_tokens": 2293,
+        "reasoning_output_tokens": 12
+      }
+    },
+    {
+      "arm": "A",
+      "checks": {
+        "behavior": true,
+        "changed_files": [
+          "Sources/CedarStore/Composition/StoreGraph.swift",
+          "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+          "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift"
+        ],
+        "compiled": true,
+        "structure": {
+          "domain_types": true,
+          "protocol_injection": true,
+          "scope_preserved": false,
+          "shared_conversion": true
+        },
+        "unrelated_changes": [
+          "Package.swift"
+        ]
+      },
+      "delivered_context": false,
+      "duration_seconds": 80.656,
+      "empty_output": false,
+      "fixture_commit": "6caa1e325ca7a072175e628f9878bdd375f3f07e",
+      "full_patch_swift_files": [
+        "Package.swift",
+        "Sources/CedarStore/Composition/StoreGraph.swift",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/Repositories/PickupLocationsRepository.swift",
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift"
+      ],
+      "label": "sample-18",
+      "launch_command": [
+        "codex",
+        "exec",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "--dangerously-bypass-approvals-and-sandbox",
+        "-C",
+        "/workspace/CedarStore",
+        "-m",
+        "gpt-6-astra",
+        "-c",
+        "model_reasoning_effort=\"medium\"",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "features.multi_agent=false",
+        "--json",
+        "--color",
+        "never",
+        "Add pickup location discovery to CedarStore. Expose StoreGraph.loadPickupLocations.execute(postcode:) async -> ShopResult<[PickupLocation]>. Use ShopAPI.pickupLocations(postcode:). Return active locations with nonnegative capacity, keeping the first eligible entry for each ID, ordered by ascending title with ID as the tie breaker. A blank or whitespace-only postcode means invalidIdentifier without calling the API. Forward a nonblank postcode unchanged. Preserve transport failure mapping. Keep the existing features working. Implement the code and give a short design note."
+      ],
+      "pretool_deliveries": 0,
+      "pretool_invocations": 0,
+      "repeat": 5,
+      "source_hash": "b99751b1740d8eff9b6fa5eafeb8fbd08af1ee250751bce7200524f4774f8721",
+      "success": true,
+      "task": "pickup",
+      "terminal_reason": "completed",
+      "tool_events": 5,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 177536,
+        "input_tokens": 206379,
+        "output_tokens": 2243,
+        "reasoning_output_tokens": 38
+      }
+    }
+  ],
+  "codex_version": "codex-cli 0.163.0",
+  "method": "Codex native SwiftChameleon context hooks",
+  "model": "gpt-6-astra",
+  "planned_cells": 20,
+  "reasoning": "medium",
+  "swift_version": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0"
+}

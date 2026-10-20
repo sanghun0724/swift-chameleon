@@ -1,0 +1,159 @@
+{
+  "arms": {
+    "A": {
+      "behavior_pass": 10,
+      "cells": 10,
+      "duration_seconds_total": 709.758,
+      "judge_mean": {
+        "consistency": 4.0,
+        "correctness": 4.0,
+        "maintainability": 4.0,
+        "scope": 4.0
+      },
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 1715456,
+        "input_tokens": 1996939,
+        "output_tokens": 21744,
+        "reasoning_output_tokens": 268
+      }
+    },
+    "B": {
+      "behavior_pass": 10,
+      "cells": 10,
+      "duration_seconds_total": 706.375,
+      "judge_mean": {
+        "consistency": 4.0,
+        "correctness": 4.0,
+        "maintainability": 4.0,
+        "scope": 4.0
+      },
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 1823744,
+        "input_tokens": 2115447,
+        "output_tokens": 20697,
+        "reasoning_output_tokens": 201
+      }
+    }
+  },
+  "behavior_pairs": {
+    "A_wins": 0,
+    "B_wins": 0,
+    "ties": 10
+  },
+  "judge_pairs": {
+    "A_wins": 0,
+    "B_wins": 0,
+    "ties": 10
+  },
+  "limitations": [
+    "Two tasks in one small independently authored fixture.",
+    "One generating model; judge is a separate GPT model, not a different model family.",
+    "Static blinded review adds no independent runtime execution.",
+    "The exact-byte scope proxy flags useful Package.swift test-target additions.",
+    "Tokens are subscription usage, not measured dollar spend."
+  ],
+  "pairs": [
+    {
+      "A": "sample-03",
+      "B": "sample-09",
+      "behavior": "tie",
+      "input_token_delta_B_minus_A": -42649,
+      "judge": "tie",
+      "output_token_delta_B_minus_A": -358,
+      "repeat": 1,
+      "task": "shipping"
+    },
+    {
+      "A": "sample-05",
+      "B": "sample-12",
+      "behavior": "tie",
+      "input_token_delta_B_minus_A": -12646,
+      "judge": "tie",
+      "output_token_delta_B_minus_A": -26,
+      "repeat": 2,
+      "task": "shipping"
+    },
+    {
+      "A": "sample-15",
+      "B": "sample-16",
+      "behavior": "tie",
+      "input_token_delta_B_minus_A": -13256,
+      "judge": "tie",
+      "output_token_delta_B_minus_A": -298,
+      "repeat": 3,
+      "task": "shipping"
+    },
+    {
+      "A": "sample-20",
+      "B": "sample-02",
+      "behavior": "tie",
+      "input_token_delta_B_minus_A": 29615,
+      "judge": "tie",
+      "output_token_delta_B_minus_A": 22,
+      "repeat": 4,
+      "task": "shipping"
+    },
+    {
+      "A": "sample-10",
+      "B": "sample-07",
+      "behavior": "tie",
+      "input_token_delta_B_minus_A": -1977,
+      "judge": "tie",
+      "output_token_delta_B_minus_A": -246,
+      "repeat": 5,
+      "task": "shipping"
+    },
+    {
+      "A": "sample-04",
+      "B": "sample-08",
+      "behavior": "tie",
+      "input_token_delta_B_minus_A": 43452,
+      "judge": "tie",
+      "output_token_delta_B_minus_A": -96,
+      "repeat": 1,
+      "task": "pickup"
+    },
+    {
+      "A": "sample-14",
+      "B": "sample-11",
+      "behavior": "tie",
+      "input_token_delta_B_minus_A": -12753,
+      "judge": "tie",
+      "output_token_delta_B_minus_A": -86,
+      "repeat": 2,
+      "task": "pickup"
+    },
+    {
+      "A": "sample-17",
+      "B": "sample-06",
+      "behavior": "tie",
+      "input_token_delta_B_minus_A": 17774,
+      "judge": "tie",
+      "output_token_delta_B_minus_A": -16,
+      "repeat": 3,
+      "task": "pickup"
+    },
+    {
+      "A": "sample-19",
+      "B": "sample-01",
+      "behavior": "tie",
+      "input_token_delta_B_minus_A": 67996,
+      "judge": "tie",
+      "output_token_delta_B_minus_A": 7,
+      "repeat": 4,
+      "task": "pickup"
+    },
+    {
+      "A": "sample-18",
+      "B": "sample-13",
+      "behavior": "tie",
+      "input_token_delta_B_minus_A": 42952,
+      "judge": "tie",
+      "output_token_delta_B_minus_A": 50,
+      "repeat": 5,
+      "task": "pickup"
+    }
+  ]
+}

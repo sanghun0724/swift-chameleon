@@ -1,0 +1,26 @@
+{
+  "adapter-sha256.txt": {
+    "original_sha256": "603634fcfa17e96fb05f8b019c7d92183f7b6fa57b81d4642aaf01aba536dc6e",
+    "published_sha256": "603634fcfa17e96fb05f8b019c7d92183f7b6fa57b81d4642aaf01aba536dc6e"
+  },
+  "codex_hooks.py": {
+    "original_sha256": "d4cb18223ae991808279801ba69bfa75cd3aff70695c001159757e68a20e2799",
+    "published_sha256": "d4cb18223ae991808279801ba69bfa75cd3aff70695c001159757e68a20e2799"
+  },
+  "generation-design.md": {
+    "original_sha256": "75c56303259cec6748edbdf9b7b6771c0d9785a3215a2c935797ddd7671d96d3",
+    "published_sha256": "75c56303259cec6748edbdf9b7b6771c0d9785a3215a2c935797ddd7671d96d3"
+  },
+  "protocol.json": {
+    "original_sha256": "334dc58cb273879e82f76cecaa481dbd48e1640541612d997410b7691704ac42",
+    "published_sha256": "334dc58cb273879e82f76cecaa481dbd48e1640541612d997410b7691704ac42"
+  },
+  "swift_generation.py": {
+    "original_sha256": "68896659d9b3b0f708a694c457b56f578c0b6839f0aaa7de570745b4eb8227c0",
+    "published_sha256": "dffdfb3c331c62cd04bb8b525b628935fa942b788f9c15e81fe0c17985913146"
+  },
+  "swift_generation_fixture.py": {
+    "original_sha256": "d2622d3b809273df7e46356963c1f9cee233f63fea3628e6d668effb5abedd97",
+    "published_sha256": "d2622d3b809273df7e46356963c1f9cee233f63fea3628e6d668effb5abedd97"
+  }
+}

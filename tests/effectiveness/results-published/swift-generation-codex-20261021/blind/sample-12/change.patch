@@ -1,0 +1,163 @@
+diff --git a/Package.swift b/Package.swift
+index 740274a..2dc5440 100644
+--- a/Package.swift
++++ b/Package.swift
+@@ -1,3 +1,3 @@
+ // swift-tools-version: 6.0
+ import PackageDescription
+-let package = Package(name: "CedarStore", products: [.library(name: "CedarStore", targets: ["CedarStore"])], targets: [.target(name: "CedarStore")])
++let package = Package(name: "CedarStore", products: [.library(name: "CedarStore", targets: ["CedarStore"])], targets: [.target(name: "CedarStore"), .testTarget(name: "CedarStoreTests", dependencies: ["CedarStore"])])
+diff --git a/Sources/CedarStore/Composition/StoreGraph.swift b/Sources/CedarStore/Composition/StoreGraph.swift
+index 5e85604..ef20f60 100644
+--- a/Sources/CedarStore/Composition/StoreGraph.swift
++++ b/Sources/CedarStore/Composition/StoreGraph.swift
+@@ -14,4 +14,8 @@ struct StoreGraph {
+     var loadBasketName: LoadBasketNameUseCase {
+         LoadBasketNameUseCase(repository: LiveBasketNameRepository(api: api))
+     }
++
++    var quoteShipping: QuoteShippingUseCase {
++        QuoteShippingUseCase(repository: LiveShippingQuoteRepository(api: api))
++    }
+ }
+diff --git a/Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift b/Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift
+new file mode 100644
+index 0000000..59c58b0
+--- /dev/null
++++ b/Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift
+@@ -0,0 +1,9 @@
++struct LiveShippingQuoteRepository: ShippingQuoteRepository {
++    private let api: any ShopAPI
++
++    init(api: any ShopAPI) { self.api = api }
++
++    func load(orderID: String) async -> ShopResult<ShippingQuote> {
++        await api.shippingQuote(orderID: orderID).domain { ShippingQuote(dto: $0) }
++    }
++}
+diff --git a/Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift b/Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift
+new file mode 100644
+index 0000000..bc094ea
+--- /dev/null
++++ b/Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift
+@@ -0,0 +1,3 @@
++protocol ShippingQuoteRepository {
++    func load(orderID: String) async -> ShopResult<ShippingQuote>
++}
+diff --git a/Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift b/Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift
+new file mode 100644
+index 0000000..6fef142
+--- /dev/null
++++ b/Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift
+@@ -0,0 +1,14 @@
++import Foundation
++
++struct QuoteShippingUseCase {
++    private let repository: any ShippingQuoteRepository
++
++    init(repository: any ShippingQuoteRepository) { self.repository = repository }
++
++    func execute(orderID: String) async -> ShopResult<ShippingQuote> {
++        guard !orderID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
++            return .issue(.invalidIdentifier)
++        }
++        return await repository.load(orderID: orderID)
++    }
++}
+diff --git a/Tests/CedarStoreTests/ShippingQuoteTests.swift b/Tests/CedarStoreTests/ShippingQuoteTests.swift
+new file mode 100644
+index 0000000..762404a
+--- /dev/null
++++ b/Tests/CedarStoreTests/ShippingQuoteTests.swift
+@@ -0,0 +1,91 @@
++import Testing
++@testable import CedarStore
++
++struct ShippingQuoteTests {
++    @Test func preservesQuoteAndIdentifier() async {
++        let api = StubAPI()
++        let result = await StoreGraph(api: api).quoteShipping.execute(orderID: " order-1 \n")
++        guard case .value(let quote) = result else {
++            Issue.record("Expected a shipping quote")
++            return
++        }
++        #expect(quote.cents == 1250)
++        #expect(quote.currency == " usd ")
++        #expect(api.orderIDs == [" order-1 \n"])
++    }
++
++    @Test func rejectsBlankIdentifiersWithoutCallingAPI() async {
++        let api = StubAPI()
++        for id in ["", " ", "\t\n\r"] {
++            let result = await StoreGraph(api: api).quoteShipping.execute(orderID: id)
++            expectIssue(result, .invalidIdentifier)
++        }
++        #expect(api.orderIDs.isEmpty)
++    }
++
++    @Test func validatesPayload() async {
++        let api = StubAPI()
++        for dto in [
++            ShippingQuoteDTO(cents: -1, currency: "USD"),
++            ShippingQuoteDTO(cents: 100, currency: "")
++        ] {
++            api.reply = .payload(dto)
++            expectIssue(await StoreGraph(api: api).quoteShipping.execute(orderID: "1"), .invalidPayload)
++        }
++        api.reply = .payload(ShippingQuoteDTO(cents: 0, currency: " "))
++        let result = await StoreGraph(api: api).quoteShipping.execute(orderID: "1")
++        guard case .value(let quote) = result else {
++            Issue.record("Zero cents and nonempty currency should be accepted")
++            return
++        }
++        #expect(quote.cents == 0)
++        #expect(quote.currency == " ")
++    }
++
++    @Test func preservesTransportFailures() async {
++        let api = StubAPI()
++        api.reply = .failure(.offline)
++        expectIssue(await StoreGraph(api: api).quoteShipping.execute(orderID: "1"), .unavailable)
++        api.reply = .failure(.forbidden)
++        expectIssue(await StoreGraph(api: api).quoteShipping.execute(orderID: "1"), .unauthorized)
++    }
++
++    @Test func existingFeaturesStillLoad() async {
++        let graph = StoreGraph(api: StubAPI())
++        let results = [
++            await graph.loadOrderSummary.execute(id: "1"),
++            await graph.loadAccountName.execute(id: "1"),
++            await graph.loadBasketName.execute(id: "1")
++        ]
++        for result in results {
++            guard case .value(let name) = result else {
++                Issue.record("Expected existing feature to load")
++                continue
++            }
++            #expect(name == "existing")
++        }
++    }
++
++    private func expectIssue<T>(_ result: ShopResult<T>, _ expected: ShopIssue) {
++        guard case .issue(let issue) = result else {
++            Issue.record("Expected \(expected)")
++            return
++        }
++        #expect(issue == expected)
++    }
++}
++
++private final class StubAPI: ShopAPI {
++    var reply: TransportReply<ShippingQuoteDTO> = .payload(ShippingQuoteDTO(cents: 1250, currency: " usd "))
++    var orderIDs: [String] = []
++
++    func shippingQuote(orderID: String) async -> TransportReply<ShippingQuoteDTO> {
++        orderIDs.append(orderID)
++        return reply
++    }
++
++    func orderSummary(id: String) async -> TransportReply<String> { .payload("existing") }
++    func accountName(id: String) async -> TransportReply<String> { .payload("existing") }
++    func basketName(id: String) async -> TransportReply<String> { .payload("existing") }
++    func pickupLocations(postcode: String) async -> TransportReply<[PickupLocationDTO]> { .payload([]) }
++}

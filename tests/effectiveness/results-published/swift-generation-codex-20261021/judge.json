@@ -1,0 +1,291 @@
+{
+  "samples": [
+    {
+      "label": "sample-01",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift:8 rejects blank/whitespace postcodes before repository access; :12 forwards the original postcode. Constructor injection uses the PickupLocationsRepository protocol, matching the existing Load*UseCase examples.",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift:7 reuses domain and PickupCatalog.available. Domain/ShopTypes.swift:58 filters before inserting IDs; :61 sorts by title then ID; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift:5 exercises eligibility before deduplication, zero capacity, title/ID order and unchanged postcode; :25 checks blanks and :45 checks transport errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-02",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift:8 rejects blank/whitespace IDs before repository access; :12 forwards the original ID. Constructor injection uses the ShippingQuoteRepository protocol, matching the existing use-case/repository boundary.",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift:7 reuses domain and ShippingQuote(dto:). Domain/ShopTypes.swift:42 accepts zero, rejects negative cents/empty currency, and :43 preserves both values; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:6 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift:5 checks zero/positive amounts and unchanged currency/ID; :19, :28 and :38 check blanks, invalid payloads and both transport errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-03",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift:8 rejects blank/whitespace IDs before repository access; :12 forwards the original ID. Constructor injection uses the ShippingQuoteRepository protocol, matching the existing use-case/repository boundary.",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift:7 reuses domain and ShippingQuote(dto:). Domain/ShopTypes.swift:42 accepts zero, rejects negative cents/empty currency, and :43 preserves both values; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:6 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift:45 checks zero through Int.max with unchanged currency/ID; :60, :69 and :83 cover rejection/error paths; :98 checks existing feature behavior."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-04",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift:8 rejects blank/whitespace postcodes before repository access; :12 forwards the original postcode. Constructor injection uses the PickupLocationsRepository protocol, matching the existing Load*UseCase examples.",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift:7 reuses domain and PickupCatalog.available. Domain/ShopTypes.swift:58 filters before inserting IDs; :61 sorts by title then ID; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift:15 exercises first eligible duplicates, zero capacity and title/ID order; :5 checks blanks; :58 and :67 check errors and existing features."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-05",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift:8 rejects blank/whitespace IDs before repository access; :12 forwards the original ID. Constructor injection uses the ShippingQuoteRepository protocol, matching the existing use-case/repository boundary.",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift:7 reuses domain and ShippingQuote(dto:). Domain/ShopTypes.swift:42 accepts zero, rejects negative cents/empty currency, and :43 preserves both values; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:6 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift:5 checks zero through Int.max and unchanged values; :19, :28 and :41 cover blanks, invalid payloads and both transport errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-06",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift:8 rejects blank/whitespace postcodes before repository access; :12 forwards the original postcode. Constructor injection uses the PickupLocationsRepository protocol, matching the existing Load*UseCase examples.",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift:7 reuses domain and PickupCatalog.available. Domain/ShopTypes.swift:58 filters before inserting IDs; :61 sorts by title then ID; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift:5 checks eligibility before deduplication, zero capacity, title/ID order and unchanged postcode; :29, :41 and :56 cover blanks, empty results and errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-07",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift:8 rejects blank/whitespace IDs before repository access; :12 forwards the original ID. Constructor injection uses the ShippingQuoteRepository protocol, matching the existing use-case/repository boundary.",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift:7 reuses domain and ShippingQuote(dto:). Domain/ShopTypes.swift:42 accepts zero, rejects negative cents/empty currency, and :43 preserves both values; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift:27 checks zero and unchanged currency/ID; :43, :52 and :61 cover blanks, invalid payloads and both transport errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-08",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift:8 rejects blank/whitespace postcodes before repository access; :12 forwards the original postcode. Constructor injection uses the PickupLocationsRepository protocol, matching the existing Load*UseCase examples.",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift:7 reuses domain and PickupCatalog.available. Domain/ShopTypes.swift:58 filters before inserting IDs; :61 sorts by title then ID; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift:5 checks first eligible IDs, zero capacity, ordering and unchanged postcode; :27, :39 and :54 cover blanks, empty catalogs and errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-09",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift:8 rejects blank/whitespace IDs before repository access; :12 forwards the original ID. Constructor injection uses the ShippingQuoteRepository protocol, matching the existing use-case/repository boundary.",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift:7 reuses domain and ShippingQuote(dto:). Domain/ShopTypes.swift:42 accepts zero, rejects negative cents/empty currency, and :43 preserves both values; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift:19 checks zero and whitespace currency preservation; :34 checks blank IDs without calls; :45 checks invalid payloads and both transport errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-10",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift:8 rejects blank/whitespace IDs before repository access; :12 forwards the original ID. Constructor injection uses the ShippingQuoteRepository protocol, matching the existing use-case/repository boundary.",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift:7 reuses domain and ShippingQuote(dto:). Domain/ShopTypes.swift:42 accepts zero, rejects negative cents/empty currency, and :43 preserves both values; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift:4 checks zero through Int.max and unchanged values; :19, :28 and :39 cover rejection/errors; :47 checks existing validation and mappings."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-11",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift:8 rejects blank/whitespace postcodes before repository access; :12 forwards the original postcode. Constructor injection uses the PickupLocationsRepository protocol, matching the existing Load*UseCase examples.",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift:7 reuses domain and PickupCatalog.available. Domain/ShopTypes.swift:58 filters before inserting IDs; :61 sorts by title then ID; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift:5 checks filtering before deduplication, zero capacity, ordering and unchanged postcode; :30, :43 and :56 cover blanks, errors and empty catalogs."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-12",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift:8 rejects blank/whitespace IDs before repository access; :12 forwards the original ID. Constructor injection uses the ShippingQuoteRepository protocol, matching the existing use-case/repository boundary.",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift:7 reuses domain and ShippingQuote(dto:). Domain/ShopTypes.swift:42 accepts zero, rejects negative cents/empty currency, and :43 preserves both values; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift:5 checks unchanged values/ID; :17 checks blank IDs; :26 accepts zero and nonempty whitespace currency while rejecting invalid payloads; :45 checks transport errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-13",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift:8 rejects blank/whitespace postcodes before repository access; :12 forwards the original postcode. Constructor injection uses the PickupLocationsRepository protocol, matching the existing Load*UseCase examples.",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift:7 reuses domain and PickupCatalog.available. Domain/ShopTypes.swift:58 filters before inserting IDs; :61 sorts by title then ID; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift:5 places an earlier-sorting duplicate after the first eligible row and checks original selection and title/ID order; :26, :35 and :46 check blanks, empty results and errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-14",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift:8 rejects blank/whitespace postcodes before repository access; :12 forwards the original postcode. Constructor injection uses the PickupLocationsRepository protocol, matching the existing Load*UseCase examples.",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift:7 reuses domain and PickupCatalog.available. Domain/ShopTypes.swift:58 filters before inserting IDs; :61 sorts by title then ID; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift:17 checks eligibility, original duplicate selection, zero capacity, ordering and unchanged postcode; :5, :42 and :58 cover blanks, empty catalogs and errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-15",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift:8 rejects blank/whitespace IDs before repository access; :12 forwards the original ID. Constructor injection uses the ShippingQuoteRepository protocol, matching the existing use-case/repository boundary.",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift:7 reuses domain and ShippingQuote(dto:). Domain/ShopTypes.swift:42 accepts zero, rejects negative cents/empty currency, and :43 preserves both values; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift:13 checks zero through Int.max and unchanged values/ID; :4, :29 and :41 cover blank IDs, invalid payloads and both transport errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-16",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift:8 rejects blank/whitespace IDs before repository access; :12 forwards the original ID. Constructor injection uses the ShippingQuoteRepository protocol, matching the existing use-case/repository boundary.",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift:7 reuses domain and ShippingQuote(dto:). Domain/ShopTypes.swift:42 accepts zero, rejects negative cents/empty currency, and :43 preserves both values; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift:19 checks zero and nonempty whitespace currency preservation; :34 checks blank IDs without calls; :46 checks invalid payloads and both transport errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-17",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift:8 rejects blank/whitespace postcodes before repository access; :12 forwards the original postcode. Constructor injection uses the PickupLocationsRepository protocol, matching the existing Load*UseCase examples.",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift:7 reuses domain and PickupCatalog.available. Domain/ShopTypes.swift:58 filters before inserting IDs; :61 sorts by title then ID; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift:20 uses an earlier-sorting duplicate to check first eligible selection and title/ID order; :5, :47 and :64 cover blanks, empty results and errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-18",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift:8 rejects blank/whitespace postcodes before repository access; :12 forwards the original postcode. Constructor injection uses the PickupLocationsRepository protocol, matching the existing Load*UseCase examples.",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift:7 reuses domain and PickupCatalog.available. Domain/ShopTypes.swift:58 filters before inserting IDs; :61 sorts by title then ID; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift:14 checks filtering before deduplication, original duplicate choice, zero capacity, ordering and unchanged postcode; :5, :39 and :55 cover blanks, empty results and errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-19",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/LoadPickupLocationsUseCase.swift:8 rejects blank/whitespace postcodes before repository access; :12 forwards the original postcode. Constructor injection uses the PickupLocationsRepository protocol, matching the existing Load*UseCase examples.",
+        "Sources/CedarStore/Data/Repositories/LivePickupLocationsRepository.swift:7 reuses domain and PickupCatalog.available. Domain/ShopTypes.swift:58 filters before inserting IDs; :61 sorts by title then ID; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:19 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/PickupLocationsTests.swift:14 checks eligibility, first eligible duplicate selection, zero capacity, ordering and unchanged postcode; :5, :39 and :56 cover blanks, empty catalogs and errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    },
+    {
+      "label": "sample-20",
+      "correctness": 4,
+      "maintainability": 4,
+      "consistency": 4,
+      "scope": 4,
+      "evidence": [
+        "Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift:8 rejects blank/whitespace IDs before repository access; :12 forwards the original ID. Constructor injection uses the ShippingQuoteRepository protocol, matching the existing use-case/repository boundary.",
+        "Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift:7 reuses domain and ShippingQuote(dto:). Domain/ShopTypes.swift:42 accepts zero, rejects negative cents/empty currency, and :43 preserves both values; :29 and :31 retain offline/forbidden mapping.",
+        "Sources/CedarStore/Composition/StoreGraph.swift:6 wires the requested feature using constructor injection. change.patch changes only feature wiring, its protocol/repository/use case, and useful test/package support; existing features and shared types are preserved.",
+        "Tests/CedarStoreTests/ShippingQuoteTests.swift:19 checks zero through Int.max and unchanged values/ID; :35, :47 and :60 cover blank IDs, invalid payloads and both transport errors."
+      ],
+      "uncertainty": "Static review only; compilation and test execution were not performed."
+    }
+  ],
+  "reviewer_limitations": [
+    "Reviewed only instructions.md and sample-01 through sample-20 inside the allowed blind bundle; no arm mapping, generation transcript, external repository history, metrics, web research or other reviewer output was consulted.",
+    "Every request, complete package source and test file, and complete change.patch was read. Repeated complete files were byte-compared with already reviewed bundle files; new-file patch bodies were checked against complete file contents.",
+    "Scores assess the visible code by the same 0..4 scale: 4 no material problem, 3 minor problem, 2 meaningful fix, 1 major problems, 0 missing/unusable. All 20 candidates meet the visible requirements without a material static-review finding; test volume did not increase scores.",
+    "The quote(orderID:) versus load(orderID:) repository naming is a valid domain-specific variation with the same protocol/injection boundary, so it does not warrant a deduction. Useful tests and Package.swift test-target support are within scope.",
+    "No compiler or runtime checks were performed. The bundle contains code and patches but no generated final prose, so the requested short design note cannot be assessed from the allowed artifacts. A score of 4 is not proof of runtime correctness."
+  ]
+}

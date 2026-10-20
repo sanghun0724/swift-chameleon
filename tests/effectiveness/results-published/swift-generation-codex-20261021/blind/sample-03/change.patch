@@ -1,0 +1,203 @@
+diff --git a/Package.swift b/Package.swift
+index 740274a..2dc5440 100644
+--- a/Package.swift
++++ b/Package.swift
+@@ -1,3 +1,3 @@
+ // swift-tools-version: 6.0
+ import PackageDescription
+-let package = Package(name: "CedarStore", products: [.library(name: "CedarStore", targets: ["CedarStore"])], targets: [.target(name: "CedarStore")])
++let package = Package(name: "CedarStore", products: [.library(name: "CedarStore", targets: ["CedarStore"])], targets: [.target(name: "CedarStore"), .testTarget(name: "CedarStoreTests", dependencies: ["CedarStore"])])
+diff --git a/Sources/CedarStore/Composition/StoreGraph.swift b/Sources/CedarStore/Composition/StoreGraph.swift
+index 5e85604..fc1fe79 100644
+--- a/Sources/CedarStore/Composition/StoreGraph.swift
++++ b/Sources/CedarStore/Composition/StoreGraph.swift
+@@ -3,6 +3,10 @@ struct StoreGraph {
+ 
+     init(api: any ShopAPI) { self.api = api }
+ 
++    var quoteShipping: QuoteShippingUseCase {
++        QuoteShippingUseCase(repository: LiveShippingQuoteRepository(api: api))
++    }
++
+     var loadOrderSummary: LoadOrderSummaryUseCase {
+         LoadOrderSummaryUseCase(repository: LiveOrderSummaryRepository(api: api))
+     }
+diff --git a/Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift b/Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift
+new file mode 100644
+index 0000000..6896fb0
+--- /dev/null
++++ b/Sources/CedarStore/Data/Repositories/LiveShippingQuoteRepository.swift
+@@ -0,0 +1,9 @@
++struct LiveShippingQuoteRepository: ShippingQuoteRepository {
++    private let api: any ShopAPI
++
++    init(api: any ShopAPI) { self.api = api }
++
++    func quote(orderID: String) async -> ShopResult<ShippingQuote> {
++        await api.shippingQuote(orderID: orderID).domain { ShippingQuote(dto: $0) }
++    }
++}
+diff --git a/Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift b/Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift
+new file mode 100644
+index 0000000..30eb4e0
+--- /dev/null
++++ b/Sources/CedarStore/Domain/Repositories/ShippingQuoteRepository.swift
+@@ -0,0 +1,3 @@
++protocol ShippingQuoteRepository {
++    func quote(orderID: String) async -> ShopResult<ShippingQuote>
++}
+diff --git a/Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift b/Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift
+new file mode 100644
+index 0000000..2b94f79
+--- /dev/null
++++ b/Sources/CedarStore/Domain/UseCases/QuoteShippingUseCase.swift
+@@ -0,0 +1,14 @@
++import Foundation
++
++struct QuoteShippingUseCase {
++    private let repository: any ShippingQuoteRepository
++
++    init(repository: any ShippingQuoteRepository) { self.repository = repository }
++
++    func execute(orderID: String) async -> ShopResult<ShippingQuote> {
++        guard !orderID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
++            return .issue(.invalidIdentifier)
++        }
++        return await repository.quote(orderID: orderID)
++    }
++}
+diff --git a/Tests/CedarStoreTests/ShippingQuoteTests.swift b/Tests/CedarStoreTests/ShippingQuoteTests.swift
+new file mode 100644
+index 0000000..e267e3a
+--- /dev/null
++++ b/Tests/CedarStoreTests/ShippingQuoteTests.swift
+@@ -0,0 +1,129 @@
++import Testing
++@testable import CedarStore
++
++private final class StubShopAPI: ShopAPI {
++    var shippingReply: TransportReply<ShippingQuoteDTO> = .payload(
++        ShippingQuoteDTO(cents: 1234, currency: "USD")
++    )
++    var shippingOrderIDs: [String] = []
++    var nameReply: TransportReply<String> = .payload("Name")
++    var nameIDs: [String] = []
++
++    func shippingQuote(orderID: String) async -> TransportReply<ShippingQuoteDTO> {
++        shippingOrderIDs.append(orderID)
++        return shippingReply
++    }
++
++    func orderSummary(id: String) async -> TransportReply<String> {
++        nameIDs.append(id)
++        return nameReply
++    }
++
++    func accountName(id: String) async -> TransportReply<String> {
++        nameIDs.append(id)
++        return nameReply
++    }
++
++    func basketName(id: String) async -> TransportReply<String> {
++        nameIDs.append(id)
++        return nameReply
++    }
++
++    func pickupLocations(postcode: String) async -> TransportReply<[PickupLocationDTO]> {
++        .payload([])
++    }
++}
++
++private func expectIssue<T>(_ result: ShopResult<T>, _ expected: ShopIssue) {
++    guard case .issue(let issue) = result else {
++        Issue.record("Expected issue \(expected)")
++        return
++    }
++    #expect(issue == expected)
++}
++
++@Test func shippingPreservesPayloadAndIdentifier() async {
++    for cents in [0, 1234, Int.max] {
++        let api = StubShopAPI()
++        api.shippingReply = .payload(ShippingQuoteDTO(cents: cents, currency: " eur "))
++        let result = await StoreGraph(api: api).quoteShipping.execute(orderID: " \torder-1\n")
++        guard case .value(let quote) = result else {
++            Issue.record("Expected shipping quote")
++            continue
++        }
++        #expect(quote.cents == cents)
++        #expect(quote.currency == " eur ")
++        #expect(api.shippingOrderIDs == [" \torder-1\n"])
++    }
++}
++
++@Test func shippingRejectsBlankIdentifiersWithoutAPICalls() async {
++    let api = StubShopAPI()
++    let graph = StoreGraph(api: api)
++    for id in ["", " ", "\t\n\r", "\u{2003}"] {
++        expectIssue(await graph.quoteShipping.execute(orderID: id), .invalidIdentifier)
++    }
++    #expect(api.shippingOrderIDs.isEmpty)
++}
++
++@Test func shippingRejectsInvalidPayloads() async {
++    for dto in [
++        ShippingQuoteDTO(cents: -1, currency: "USD"),
++        ShippingQuoteDTO(cents: 100, currency: ""),
++    ] {
++        let api = StubShopAPI()
++        api.shippingReply = .payload(dto)
++        expectIssue(
++            await StoreGraph(api: api).quoteShipping.execute(orderID: "order-1"),
++            .invalidPayload
++        )
++    }
++}
++
++@Test func shippingMapsTransportFailures() async {
++    for (transport, expected) in [
++        (TransportIssue.offline, ShopIssue.unavailable),
++        (.forbidden, .unauthorized),
++    ] {
++        let api = StubShopAPI()
++        api.shippingReply = .failure(transport)
++        expectIssue(
++            await StoreGraph(api: api).quoteShipping.execute(orderID: "order-1"),
++            expected
++        )
++        #expect(api.shippingOrderIDs == ["order-1"])
++    }
++}
++
++@Test func existingFeaturesRetainValidationAndMapping() async {
++    let api = StubShopAPI()
++    let graph = StoreGraph(api: api)
++    for feature in 0..<3 {
++        func execute(_ id: String) async -> ShopResult<String> {
++            switch feature {
++            case 0: return await graph.loadOrderSummary.execute(id: id)
++            case 1: return await graph.loadAccountName.execute(id: id)
++            default: return await graph.loadBasketName.execute(id: id)
++            }
++        }
++
++        api.nameIDs = []
++        expectIssue(await execute(" \n"), .invalidIdentifier)
++        #expect(api.nameIDs.isEmpty)
++
++        api.nameReply = .payload("Name")
++        if case .value(let name) = await execute(" id ") {
++            #expect(name == "Name")
++        } else {
++            Issue.record("Expected name")
++        }
++        #expect(api.nameIDs == [" id "])
++
++        api.nameReply = .payload("")
++        expectIssue(await execute("id"), .invalidPayload)
++        api.nameReply = .failure(.offline)
++        expectIssue(await execute("id"), .unavailable)
++        api.nameReply = .failure(.forbidden)
++        expectIssue(await execute("id"), .unauthorized)
++    }
++}
