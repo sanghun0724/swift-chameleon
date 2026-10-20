@@ -33,7 +33,8 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
+    branches: [main, verify/cross-platform]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -135,11 +136,18 @@ jobs:
 
       # Runs the simulated branch tests AND the win32-only tests that exercise the
       # real msvcrt / ctypes OpenProcess paths (skipped everywhere else).
-      - name: Cross-platform locking tests
+      - name: Swift and cross-platform locking tests
         working-directory: plugin/mcp
         env:
           PYTHONPATH: '.;../..'
-        run: uv run python -m pytest ../../tests/unit/test_locks_cross_platform.py -v
+        run: >-
+          uv run python -m pytest
+          ../../tests/unit/test_locks_cross_platform.py
+          ../../tests/unit/test_swift_detection.py
+          ../../tests/unit/test_swift_extraction.py
+          ../../tests/unit/test_swift_context.py
+          ../../tests/unit/test_swift_canonical_history.py
+          ../../tests/unit/test_swift_journey.py -v
 
   runtime-windows:
     name: runtime-windows (hooks + lifecycle)
