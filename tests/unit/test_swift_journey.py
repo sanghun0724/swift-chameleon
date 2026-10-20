@@ -113,7 +113,9 @@ def _hook(payload: str, repo: Path, *, disabled: bool = False):
         "CHAMELEON_DISABLE": "1" if disabled else "0",
     }
     return subprocess.run(
-        ["bash", str(ROOT / "plugin/hooks/run-hook.cmd"), "preflight-and-advise"],
+        ["cmd", "/c", str(ROOT / "plugin/hooks/run-hook.cmd"), "preflight-and-advise"]
+        if sys.platform == "win32"
+        else ["bash", str(ROOT / "plugin/hooks/run-hook.cmd"), "preflight-and-advise"],
         input=payload,
         text=True,
         capture_output=True,

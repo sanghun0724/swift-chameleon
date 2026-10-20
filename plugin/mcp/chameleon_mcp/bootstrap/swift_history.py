@@ -84,20 +84,48 @@ class _Budget:
                 try:
                     chunks = []
                     with selectors.DefaultSelector() as selector:
-                        selector.register(proc.stdout, selectors.EVENT_READ)
-                        while selector.get_map():
-                            if not selector.select(self.remaining()):
+                        if os.name == "nt":
+                            import ctypes
+                            import msvcrt
+                            from ctypes import wintypes
+
+                            peek = ctypes.WinDLL("kernel32", use_last_error=True).PeekNamedPipe
+                            peek.argtypes = [
+                                wintypes.HANDLE,
+                                ctypes.c_void_p,
+                                wintypes.DWORD,
+                                ctypes.c_void_p,
+                                ctypes.POINTER(wintypes.DWORD),
+                                ctypes.c_void_p,
+                            ]
+                            peek.restype = wintypes.BOOL
+                            handle = msvcrt.get_osfhandle(proc.stdout.fileno())
+                        else:
+                            selector.register(proc.stdout, selectors.EVENT_READ)
+                        while True:
+                            size = min(65_536, self.remaining_bytes + 1)
+                            if os.name == "nt":
+                                available = wintypes.DWORD()
+                                if not peek(handle, None, 0, None, ctypes.byref(available), None):
+                                    error = ctypes.get_last_error()
+                                    if error == 109:  # ERROR_BROKEN_PIPE means stdout reached EOF.
+                                        break
+                                    raise ctypes.WinError(error)
+                                if not available.value:
+                                    time.sleep(min(0.01, self.remaining()))
+                                    continue
+                                self.remaining()
+                                size = min(size, available.value)
+                            elif not selector.select(self.remaining()):
                                 raise _Unavailable("timeout")
-                            chunk = os.read(
-                                proc.stdout.fileno(), min(65_536, self.remaining_bytes + 1)
-                            )
+                            chunk = os.read(proc.stdout.fileno(), size)
                             self.remaining_bytes -= len(chunk)
                             if self.remaining_bytes < 0:
                                 raise _Unavailable("output-limit")
                             if chunk:
                                 chunks.append(chunk)
                             else:
-                                selector.unregister(proc.stdout)
+                                break
                     if proc.wait(timeout=self.remaining()) != 0:
                         raise _Unavailable("git-unavailable")
                     return b"".join(chunks)

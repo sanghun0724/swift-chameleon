@@ -111,7 +111,20 @@ def test_string_contents_comments_and_identifier_changes_are_substantive(repo, b
     assert age(repo, "a.swift").epoch == RECENT
 
 
-@pytest.mark.parametrize("name", ["a space.swift", "café 한글.swift", "commit 123\n:thing.swift"])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "a space.swift",
+        "café 한글.swift",
+        pytest.param(
+            "commit 123\n:thing.swift",
+            marks=pytest.mark.skipif(
+                sys.platform == "win32",
+                reason="Windows forbids colon and newline in filenames",
+            ),
+        ),
+    ],
+)
 def test_legal_filename_delimiters_and_subroot(repo, name):
     write(repo, "workspace/" + name)
     commit(repo)
@@ -341,3 +354,9 @@ def test_binary_delta_is_substantive_without_interpreting_bytes(repo):
     (repo / "a.swift").write_bytes(b"second\x00payload")
     commit(repo, RECENT)
     assert age(repo, "a.swift").epoch == RECENT
+
+
+def test_raw_history_preserves_header_like_filename_bytes():
+    name = "workspace/commit 123\n:thing.swift"
+    raw = b"commit 1600000000 parent\0\n:100644 100644 old new M\0" + os.fsencode(name) + b"\0"
+    assert list(swift_history._changes(raw)) == [(OLD, True, "old", "new", name)]
