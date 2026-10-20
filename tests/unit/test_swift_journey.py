@@ -185,7 +185,12 @@ def test_swift_context_through_real_mcp_stdio(swift_repo):
     async def exercise():
         params = StdioServerParameters(
             command=sys.executable,
-            args=["-m", "chameleon_mcp.server"],
+            args=[
+                "-c",
+                "import faulthandler; "
+                "faulthandler.dump_traceback_later(15, repeat=True); "
+                "from chameleon_mcp.server import main; main()",
+            ],
             env={**os.environ, "PYTHONPATH": str(ROOT / "plugin/mcp")},
         )
         async with stdio_client(params) as (read, write):
