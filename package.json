@@ -1,6 +1,6 @@
 {
   "name": "swift-chameleon",
-  "version": "4.11.0",
+  "version": "4.12.0",
   "description": "Swift repository patterns and recent implementation examples for AI agents.",
   "private": true,
   "license": "MIT",

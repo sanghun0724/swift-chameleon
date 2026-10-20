@@ -1,0 +1,11 @@
+Codex adapter boundary regression checkpoint before fixes
+
+Command:
+PYTHONPATH=. plugin/mcp/.venv/bin/python -m pytest tests/unit/test_codex_hooks.py -k "nested_repo_suppression or trace_fifo" -q
+
+Observed outcome: 3 failed, 23 deselected in 7.81s.
+- nested repository skip: additionalContext emitted despite child .chameleon/.skip
+- nested repository session disable: additionalContext emitted despite signed child session marker
+- FIFO trace: actual main() subprocess timed out after 5 seconds before JSON output
+
+This is a concise observation record, not a replacement transcript. The frozen generation adapter remains unchanged at this checkpoint.
