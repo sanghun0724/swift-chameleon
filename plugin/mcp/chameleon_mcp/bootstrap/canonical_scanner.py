@@ -8,8 +8,8 @@ Two scanner families live here:
    prompt injection attack on the AI consumer.
 
 2. **Secret scanner** (`scan_for_secrets_in_canonical`):
-   Wraps the real `detect-secrets` library so canonical witnesses are
-   guaranteed never to leak credentials through the model context. The
+   Wraps the real `detect-secrets` library to exclude detected credentials
+   from canonical witnesses. These heuristics cannot detect every secret. The
    bootstrap selection pipeline already calls `secret_scanner.scan_for_secrets`
    to filter witnesses; this module re-exports it under the
    canonical-scanner namespace so the lint engine and other code paths
@@ -72,7 +72,9 @@ def scan_for_injection_signals(content: str) -> list[dict]:
     return hits
 
 
-def scan_for_secrets_in_canonical(content: str) -> list[dict]:
+def scan_for_secrets_in_canonical(
+    content: str, *, language: str | None = None, require_complete: bool = False
+) -> list[dict]:
     """Run `detect-secrets` against canonical content.
 
     The canonical-pool selection in `canonical.py` already
@@ -88,14 +90,17 @@ def scan_for_secrets_in_canonical(content: str) -> list[dict]:
     `secret_value: "<redacted>"` placeholder (the real value is NEVER
     echoed — see `secret_scanner._try_detect_secrets`).
     """
-    return scan_for_secrets(content)
+    return scan_for_secrets(content, language=language, require_complete=require_complete)
 
 
-def is_safe_canonical(content: str) -> bool:
-    """True iff content has no injection-shaped patterns AND no secrets.
+def is_safe_canonical(
+    content: str, *, language: str | None = None, require_complete: bool = False
+) -> bool:
+    """True when the supported checks find no injection signals or secrets.
 
-    Now also checks `detect-secrets` so a file with hardcoded
-    credentials can never be promoted to a canonical witness — even if
-    it happens to be free of instruction-shaped comments.
+    With require_complete, an unavailable or incomplete secret scan raises
+    instead of treating a partially checked witness as safe.
     """
-    return not scan_for_injection_signals(content) and not scan_for_secrets_in_canonical(content)
+    return not scan_for_injection_signals(content) and not scan_for_secrets_in_canonical(
+        content, language=language, require_complete=require_complete
+    )

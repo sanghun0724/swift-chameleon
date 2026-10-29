@@ -5,6 +5,8 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from tests.unit.test_swift_journey import swift_repo as swift_repo
@@ -111,6 +113,166 @@ def test_native_startup_requires_trust_and_supplies_real_canonicals(swift_repo):
     assert response["hookSpecificOutput"]["hookEventName"] == "SessionStart"
     assert len(context) <= hooks.MAX_CONTEXT_CHARS
     assert not (repo / ".claude").exists()
+
+
+def test_startup_warns_about_trusted_legacy_swift_project_profile(tmp_path, monkeypatch):
+    from chameleon_mcp import tools
+    from chameleon_mcp.profile import loader
+
+    path = "Projects/Feature/Market/Sources/Scenes/WriteForm/NA/FormInteractor.swift"
+    loaded = SimpleNamespace(
+        archetypes={
+            "archetypes": {"old": {"paths_pattern": "swift/Projects/Feature/Market/unknown:swift"}}
+        },
+        canonicals={"canonicals": {"old": [{"witness": {"path": path}}]}},
+    )
+    monkeypatch.setattr(
+        tools, "get_pattern_context", lambda _: {"data": {"repo": {"trust_state": "trusted"}}}
+    )
+    monkeypatch.setattr(loader, "load_profile_dir", lambda _: loaded)
+    monkeypatch.setattr(loader, "find_repo_root", lambda _: tmp_path)
+    monkeypatch.setattr(hooks, "_startup_targets", lambda _: ())
+    response = hooks.context_response(hooks.HookRequest("SessionStart", tmp_path))
+    context = response["hookSpecificOutput"]["additionalContext"]
+    assert "refresh_repo" in context
+    assert "force" in context
+
+
+def test_startup_does_not_warn_for_current_or_untrusted_profile(tmp_path, monkeypatch):
+    from chameleon_mcp import tools
+    from chameleon_mcp.profile import loader
+    from chameleon_mcp.signatures import path_pattern_bucket_for
+
+    path = "Projects/Feature/Market/Sources/Scenes/WriteForm/NA/FormInteractor.swift"
+    bucket, _ = path_pattern_bucket_for(path, include_extension=True)
+    loaded = SimpleNamespace(
+        archetypes={"archetypes": {"current": {"paths_pattern": bucket}}},
+        canonicals={"canonicals": {"current": [{"witness": {"path": path}}]}},
+    )
+    monkeypatch.setattr(loader, "load_profile_dir", lambda _: loaded)
+    monkeypatch.setattr(
+        tools, "get_pattern_context", lambda _: {"data": {"repo": {"trust_state": "trusted"}}}
+    )
+    assert not hooks._startup_needs_refresh(tmp_path)
+    loaded.archetypes["archetypes"]["current"]["paths_pattern"] = (
+        "swift/Projects/Feature/Market/unknown:swift"
+    )
+    monkeypatch.setattr(
+        tools, "get_pattern_context", lambda _: {"data": {"repo": {"trust_state": "untrusted"}}}
+    )
+    assert not hooks._startup_needs_refresh(tmp_path)
+
+
+def test_startup_warns_for_legacy_non_project_swift_role(tmp_path, monkeypatch):
+    from chameleon_mcp import tools
+    from chameleon_mcp.profile import loader
+
+    path = "Sources/Accounts/AccountInteractor.swift"
+    loaded = SimpleNamespace(
+        archetypes={
+            "archetypes": {"old": {"paths_pattern": "swift/Sources/Accounts/unknown:swift"}}
+        },
+        canonicals={"canonicals": {"old": [{"witness": {"path": path}}]}},
+    )
+    monkeypatch.setattr(loader, "load_profile_dir", lambda _: loaded)
+    monkeypatch.setattr(
+        tools, "get_pattern_context", lambda _: {"data": {"repo": {"trust_state": "trusted"}}}
+    )
+    assert hooks._startup_needs_refresh(tmp_path)
+
+
+def test_startup_warns_for_legacy_swift_profile_without_witnesses(tmp_path, monkeypatch):
+    from chameleon_mcp import tools
+    from chameleon_mcp.profile import loader
+
+    loaded = SimpleNamespace(
+        profile={"language": "swift"},
+        archetypes={
+            "archetypes": {"old": {"paths_pattern": "swift/Sources/Accounts/unknown:swift"}}
+        },
+        canonicals={"canonicals": {}},
+    )
+    monkeypatch.setattr(loader, "load_profile_dir", lambda _: loaded)
+    monkeypatch.setattr(
+        tools, "get_pattern_context", lambda _: {"data": {"repo": {"trust_state": "trusted"}}}
+    )
+    assert hooks._startup_needs_refresh(tmp_path)
+
+
+def test_startup_refresh_check_skips_sample_archetypes_before_limit(tmp_path, monkeypatch):
+    from chameleon_mcp import tools
+    from chameleon_mcp.profile import loader
+
+    sample = "Projects/Sample/Market/Sources/SampleView.swift"
+    production = "Sources/Accounts/AccountInteractor.swift"
+    names = [f"a{i:04}" for i in range(hooks.MAX_STARTUP_ARCHETYPES)]
+    archetypes = {
+        name: {"paths_pattern": "swift/Projects/Sample/Market/Sources/view:swift"} for name in names
+    }
+    canonicals = {name: [{"witness": {"path": sample}}] for name in names}
+    archetypes["z-old"] = {"paths_pattern": "swift/Sources/Accounts/unknown:swift"}
+    canonicals["z-old"] = [{"witness": {"path": production}}]
+    loaded = SimpleNamespace(
+        archetypes={"archetypes": archetypes}, canonicals={"canonicals": canonicals}
+    )
+    monkeypatch.setattr(loader, "load_profile_dir", lambda _: loaded)
+    monkeypatch.setattr(
+        tools, "get_pattern_context", lambda _: {"data": {"repo": {"trust_state": "trusted"}}}
+    )
+    assert hooks._startup_needs_refresh(tmp_path)
+
+
+def test_startup_does_not_inject_samples_or_let_them_hide_production(tmp_path, monkeypatch):
+    from chameleon_mcp import tools
+    from chameleon_mcp.profile import loader
+
+    sample = tmp_path / "Projects/Sample/Market/Sources/Example.swift"
+    production = tmp_path / "Projects/Feature/Market/Sources/MarketView.swift"
+    for path in (sample, production):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("struct Example {}")
+    entries = {
+        f"a{i:02}": [{"witness": {"path": sample.relative_to(tmp_path).as_posix()}}]
+        for i in range(hooks.MAX_STARTUP_ARCHETYPES)
+    }
+    entries["z-production"] = [{"witness": {"path": production.relative_to(tmp_path).as_posix()}}]
+    monkeypatch.setattr(
+        tools, "get_pattern_context", lambda _: {"data": {"repo": {"trust_state": "trusted"}}}
+    )
+    monkeypatch.setattr(
+        loader, "load_profile_dir", lambda _: SimpleNamespace(canonicals={"canonicals": entries})
+    )
+    assert hooks._startup_targets(tmp_path) == (production,)
+
+
+def test_startup_continues_past_empty_excerpts(tmp_path, monkeypatch):
+    from chameleon_mcp import tools
+    from chameleon_mcp.profile import loader
+
+    entries = {}
+    for i in range(hooks.MAX_CONTEXTS + 1):
+        path = tmp_path / f"Sources/App/Screen{i}View.swift"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("struct Screen {}")
+        entries[f"a{i}"] = [{"witness": {"path": path.relative_to(tmp_path).as_posix()}}]
+    loaded = SimpleNamespace(canonicals={"canonicals": entries})
+    monkeypatch.setattr(loader, "load_profile_dir", lambda _: loaded)
+    monkeypatch.setattr(loader, "find_repo_root", lambda _: tmp_path)
+
+    def context(path):
+        name = Path(path).stem
+        return {
+            "data": {
+                "repo": {"trust_state": "trusted"},
+                "archetype": {"archetype": name},
+                "canonical_excerpt": {"content": "struct Safe {}" if name == "Screen6View" else ""},
+            }
+        }
+
+    monkeypatch.setattr(tools, "get_pattern_context", context)
+    results = hooks._collect_context(hooks._startup_targets(tmp_path), None)
+    assert len(results) == 1
+    assert results[0]["canonical_excerpt"]["content"] == "struct Safe {}"
 
 
 def test_native_edit_uses_real_context_and_respects_disabled(swift_repo, monkeypatch):

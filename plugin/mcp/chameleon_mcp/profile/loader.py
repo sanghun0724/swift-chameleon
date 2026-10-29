@@ -24,6 +24,7 @@ from chameleon_mcp.profile.schema import (
 )
 from chameleon_mcp.safe_open import (
     UnsafeFileError,
+    profile_artifact_max_bytes,
     safe_read_profile_artifact,
 )
 
@@ -48,7 +49,7 @@ ALLOW_TMP_REPO_ENV = "CHAMELEON_ALLOW_TMP_REPO"
 _REPO_ROOT_CACHE: dict[str, tuple[int | None, bool, tuple[Path | None, str | None]]] = {}
 
 
-_PROFILE_CACHE: dict[str, tuple[str, LoadedProfile]] = {}
+_PROFILE_CACHE: dict[str, tuple[str, int, LoadedProfile]] = {}
 
 
 def clear_profile_cache() -> None:
@@ -77,7 +78,7 @@ class ProfileLoadError(Exception):
     """Raised when a profile fails to load (missing sentinel, schema, generation)."""
 
 
-def _safe_read_artifact(path: Path) -> str:
+def _safe_read_artifact(path: Path, *, max_bytes: int | None = None) -> str:
     """Read a chameleon profile artifact via the shared safe helper.
 
     Thin wrapper that translates UnsafeFileError into ProfileLoadError so
@@ -87,7 +88,7 @@ def _safe_read_artifact(path: Path) -> str:
     four hashed-artifact consumers share one implementation.
     """
     try:
-        return safe_read_profile_artifact(path)
+        return safe_read_profile_artifact(path, max_bytes=max_bytes)
     except FileNotFoundError:
         raise
     except UnsafeFileError as exc:
@@ -494,6 +495,7 @@ def load_profile_dir(profile_dir: Path) -> LoadedProfile:
     # Normalize the key so `../` segments and symlink variants of the same
     # directory collapse to one cache entry instead of accumulating stale
     # duplicates. resolve(strict=False) tolerates a not-yet-created dir.
+    artifact_limit = profile_artifact_max_bytes()
     try:
         cache_key = str(profile_dir.resolve(strict=False))
     except OSError:
@@ -522,8 +524,8 @@ def load_profile_dir(profile_dir: Path) -> LoadedProfile:
         quick_conventions = profile_dir / "conventions.json"
         quick_token = _compute_mtime_token(quick_artifact_paths, quick_idioms, quick_conventions)
         cached = _PROFILE_CACHE.get(cache_key)
-        if cached is not None and cached[0] == quick_token:
-            return cached[1]
+        if cached is not None and cached[0] == quick_token and cached[1] == artifact_limit:
+            return cached[2]
     except (FileNotFoundError, OSError):
         pass
 
@@ -554,13 +556,15 @@ def load_profile_dir(profile_dir: Path) -> LoadedProfile:
     mtimes_before = tuple(p.stat().st_mtime_ns for p in artifact_paths)
     conv_mtime_before = _opt_mtime(conventions_path)
 
-    profile = _loads_hardened(_safe_read_artifact(artifact_paths[0]))
-    archetypes = _loads_hardened(_safe_read_artifact(artifact_paths[1]))
-    rules = _loads_hardened(_safe_read_artifact(artifact_paths[2]))
-    canonicals = _loads_hardened(_safe_read_artifact(artifact_paths[3]))
+    profile = _loads_hardened(_safe_read_artifact(artifact_paths[0], max_bytes=artifact_limit))
+    archetypes = _loads_hardened(_safe_read_artifact(artifact_paths[1], max_bytes=artifact_limit))
+    rules = _loads_hardened(_safe_read_artifact(artifact_paths[2], max_bytes=artifact_limit))
+    canonicals = _loads_hardened(_safe_read_artifact(artifact_paths[3], max_bytes=artifact_limit))
 
     try:
-        conventions = _loads_hardened(_safe_read_artifact(conventions_path))
+        conventions = _loads_hardened(
+            _safe_read_artifact(conventions_path, max_bytes=artifact_limit)
+        )
     except FileNotFoundError:
         # ABSENT conventions.json is fine (optional enrichment). A CORRUPT one
         # (ProfileLoadError: torn JSON, schema-rejected, OR the symlink/size
@@ -577,7 +581,7 @@ def load_profile_dir(profile_dir: Path) -> LoadedProfile:
 
     idioms_path = profile_dir / "idioms.md"
     try:
-        idioms_text = _safe_read_artifact(idioms_path)
+        idioms_text = _safe_read_artifact(idioms_path, max_bytes=artifact_limit)
     except FileNotFoundError:
         idioms_text = ""
     if idioms_text and _prose_injection_unsafe(idioms_text):
@@ -670,6 +674,6 @@ def load_profile_dir(profile_dir: Path) -> LoadedProfile:
         archetype_names=archetype_names,
     )
 
-    _PROFILE_CACHE[cache_key] = (mtime_token, loaded)
+    _PROFILE_CACHE[cache_key] = (mtime_token, artifact_limit, loaded)
 
     return loaded

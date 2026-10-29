@@ -3546,6 +3546,10 @@ def _bootstrap_single(
             },
         },
     }
+    if extractor.language == "swift":
+        from chameleon_mcp.signatures import SWIFT_BUCKET_VERSION
+
+        profile_data["swift_bucket_version"] = SWIFT_BUCKET_VERSION
     if swift_history:
         profile_data["swift_history"] = swift_history
     if parent_repo_id is not None or parent_workspace_path is not None:

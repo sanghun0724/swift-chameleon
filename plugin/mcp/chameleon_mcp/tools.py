@@ -2187,6 +2187,10 @@ def render_idiom_gists(idioms_text: str) -> str:
     return sanitize_for_chameleon_context("\n".join(lines))
 
 
+class _CanonicalScanUnavailable(Exception):
+    pass
+
+
 def get_pattern_context(file_path: str) -> dict:
     """Collapsed call: archetype + canonical + rules + meta in one round trip.
 
@@ -2384,25 +2388,20 @@ def get_pattern_context(file_path: str) -> dict:
                             or st2.st_ctime_ns != st.st_ctime_ns
                         ):
                             raise OSError("witness changed mid-read; failing open")
-                        # The witness passed the secret/injection scan at bootstrap,
-                        # but the working-tree file may have been edited since (trust
-                        # is one-time, so a post-grant edit never re-prompts). Re-scan
-                        # the freshly-read content and drop it on a hit, exactly as
-                        # get_canonical_excerpt does -- otherwise a secret or natural-
-                        # language injection added to a committed witness after the
-                        # grant reaches model context on the per-edit hot path
-                        # (sanitize_for_chameleon_context keeps secrets and does not
-                        # neutralize injection prose). Fail-open if the scanner can't
-                        # be imported, matching the get_canonical_excerpt path.
+                        # A trusted witness may have changed since bootstrap.
+                        # A failed scan must not enter the excerpt cache.
                         try:
                             from chameleon_mcp.bootstrap.canonical_scanner import (
                                 is_safe_canonical,
                             )
 
-                            if not is_safe_canonical(raw):
+                            language = (
+                                "swift" if Path(witness_rel).suffix.lower() == ".swift" else None
+                            )
+                            if not is_safe_canonical(raw, language=language, require_complete=True):
                                 return "", False
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            raise _CanonicalScanUnavailable from exc
                         return sanitize_for_chameleon_context(raw), False
 
                     try:
@@ -2418,6 +2417,14 @@ def get_pattern_context(file_path: str) -> dict:
                         "witness_path": witness_rel,
                         "truncated": truncated,
                         "sha_hint": first.get("witness", {}).get("sha_hint"),
+                    }
+                except _CanonicalScanUnavailable:
+                    canonical_data = {
+                        "content": "",
+                        "witness_path": None,
+                        "truncated": False,
+                        "sha_hint": None,
+                        "redacted_reason": "safety_scan_failed",
                     }
                 except FileTooLargeError:
                     # A witness over the 5 MB ceiling (a pathological/generated file
@@ -2930,29 +2937,41 @@ def get_canonical_excerpt(repo: str, archetype: str) -> dict:
 
     # The witness passed the secret/injection scan at bootstrap time, but the
     # working-tree file may have been edited since. Re-scan the freshly-read
-    # content before it reaches model context; drop it on a hit. Fail-open if
-    # the scanner can't be imported (matches the canonical-ref materialize path).
+    # content before it reaches model context; drop it on a hit or scan failure.
     try:
         from chameleon_mcp.bootstrap.canonical_scanner import is_safe_canonical
 
-        if not is_safe_canonical(content):
-            return _with_repo_root(
-                {
-                    "status": "no_witness",
-                    "reason": (
-                        "live canonical witness now contains a secret or "
-                        "injection pattern; run /chameleon-refresh"
-                    ),
-                    "archetype_name": archetype,
-                    "repo_id": repo_id,
-                    "content": None,
-                    "witness_path": witness_rel,
-                    "truncated": False,
-                    "sha_hint": witness.get("sha_hint"),
-                }
-            )
+        language = "swift" if Path(witness_rel).suffix.lower() == ".swift" else None
+        safe = is_safe_canonical(content, language=language, require_complete=True)
     except Exception:
-        pass
+        return _with_repo_root(
+            {
+                "status": "failed",
+                "error": "canonical witness safety scan failed; witness withheld",
+                "archetype_name": archetype,
+                "repo_id": repo_id,
+                "content": None,
+                "witness_path": None,
+                "truncated": False,
+                "sha_hint": None,
+            }
+        )
+    if not safe:
+        return _with_repo_root(
+            {
+                "status": "no_witness",
+                "reason": (
+                    "live canonical witness now contains a secret or "
+                    "injection pattern; run /chameleon-refresh"
+                ),
+                "archetype_name": archetype,
+                "repo_id": repo_id,
+                "content": None,
+                "witness_path": witness_rel,
+                "truncated": False,
+                "sha_hint": witness.get("sha_hint"),
+            }
+        )
 
     content = sanitize_for_chameleon_context(content)
     return _with_repo_root(
@@ -9651,6 +9670,26 @@ def _update_statusline_trust(repo_path, trust_state: str) -> None:
         pass
 
 
+def _unsupported_swift_bucket_version(manifest: object) -> dict | None:
+    if not isinstance(manifest, dict) or manifest.get("language") != "swift":
+        return None
+    from chameleon_mcp.signatures import SWIFT_BUCKET_VERSION
+
+    version = manifest.get("swift_bucket_version")
+    if (
+        isinstance(version, int)
+        and not isinstance(version, bool)
+        and version > SWIFT_BUCKET_VERSION
+    ):
+        return _envelope(
+            {
+                "status": "unsupported_swift_bucket_version",
+                "error": "Swift grouping was created by a newer engine; upgrade before refreshing.",
+            }
+        )
+    return None
+
+
 def _refresh_repo_locked(repo_path, *, force: bool, analysis_root: Path | None = None) -> dict:
     """Execute refresh logic. Called while .chameleon/.refresh.lock is held.
 
@@ -9706,6 +9745,16 @@ def _refresh_repo_locked(repo_path, *, force: bool, analysis_root: Path | None =
                 ),
             }
         )
+
+    if isinstance(_pj_manifest, dict) and _pj_manifest.get("language") == "swift":
+        from chameleon_mcp.signatures import SWIFT_BUCKET_VERSION
+
+        refusal = _unsupported_swift_bucket_version(_pj_manifest)
+        if refusal:
+            return refusal
+        bucket_version = _pj_manifest.get("swift_bucket_version")
+        if bucket_version != SWIFT_BUCKET_VERSION:
+            force = True
 
     if force:
         return bootstrap_repo(
@@ -11216,6 +11265,9 @@ def _bootstrap_repo_unlocked(
                     ),
                 }
             )
+        refusal = _unsupported_swift_bucket_version(_existing_manifest)
+        if refusal:
+            return refusal
 
     if not force:
         committed_marker = repo_root / ".chameleon" / "COMMITTED"

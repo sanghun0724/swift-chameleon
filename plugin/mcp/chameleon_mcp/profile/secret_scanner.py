@@ -13,6 +13,8 @@ Per docs/architecture.md "Security mitigations" #1.
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
 from typing import Any
 
 from chameleon_mcp.secret_placeholder import secret_value_is_placeholder
@@ -74,6 +76,36 @@ _NOISY_DETECT_SECRETS_TYPES = frozenset(
 # the line that holds it also names a credential, so a true secret assignment
 # (api_token = "...") still flags while bare identifiers and hashes do not.
 _CONTEXT_GATED_KINDS = frozenset({"possible_aws_secret", "high_entropy_hex"})
+_SWIFT_UNINITIALIZED_PROPERTY = re.compile(
+    r"\s*(?:(?:private|public|internal|fileprivate|open|static|lazy|weak|unowned)\s+)*"
+    r"(?:let|var)\s+[A-Za-z_][A-Za-z0-9_]*\s*:\s*"
+    r"(?P<identifier>[A-Za-z_][A-Za-z0-9_.]*\??)\s*"
+)
+_SWIFT_FUNCTION_DECLARATION = re.compile(
+    r"\s*(?:(?:private|public|internal|fileprivate|open|static|class|final|override)\s+)*"
+    r"func\s+(?P<identifier>[A-Za-z_][A-Za-z0-9_]*)\s*"
+    r"\([^()'\"={}]*\)\s*\{\s*"
+)
+_LONG_SECRET_SHAPE = next(p for p, kind in _FALLBACK_PATTERNS if kind == "possible_aws_secret")
+_SWIFT_POSSIBLE_REGEX_START = re.compile(r"(?:=|\(|\[|:|,|\breturn|\bcase)\s*/(?![/*])")
+
+
+def _swift_compiler_parses(content: str) -> bool:
+    if sys.platform != "darwin":
+        return False
+    try:
+        result = subprocess.run(
+            ["/usr/bin/xcrun", "swiftc", "-frontend", "-parse", "-"],
+            input=content.encode("utf-8"),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, UnicodeError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
 
 # Credential words that open the context gate, matched as whole TOKENS rather
 # than substrings. A bare alternation matched inside ordinary prose -- "auth" in
@@ -129,11 +161,19 @@ def _credential_words_in(text: str) -> bool:
     return any(t in _CREDENTIAL_WORDS for t in re.findall(r"[a-z0-9]+", spaced.lower()))
 
 
-def _try_detect_secrets(content: str) -> list[dict[str, Any]] | None:
+class IncompleteSecretScan(Exception):
+    """The complete witness could not be checked by the secret scanner."""
+
+
+def _try_detect_secrets(
+    content: str, *, require_complete: bool = False
+) -> list[dict[str, Any]] | None:
     try:
         from detect_secrets.core.scan import scan_line
         from detect_secrets.settings import default_settings
-    except ImportError:
+    except ImportError as exc:
+        if require_complete:
+            raise IncompleteSecretScan("secret scanner is unavailable") from exc
         return None
 
     from chameleon_mcp._thresholds import threshold_int
@@ -141,8 +181,8 @@ def _try_detect_secrets(content: str) -> list[dict[str, Any]] | None:
     # detect-secrets re-scans the whole line through its allowlist regexes for
     # every candidate it yields, so a token-dense single line (minified bundle,
     # generated const map) costs O(candidates x length) — tens of seconds at
-    # 100KB. Lines past the cap are left to the deterministic fallback patterns,
-    # which scan linearly and carry every block-eligible secret kind.
+    # 100KB. Non-strict scans leave long lines to the fallback patterns;
+    # complete witness scans reject lines the backend cannot inspect.
     max_line_len = threshold_int("SECRET_SCAN_MAX_LINE_LEN")
 
     hits: list[dict[str, Any]] = []
@@ -150,6 +190,8 @@ def _try_detect_secrets(content: str) -> list[dict[str, Any]] | None:
         with default_settings():
             for line_no, line in enumerate(content.splitlines(), start=1):
                 if len(line) > max_line_len:
+                    if require_complete:
+                        raise IncompleteSecretScan("line exceeds the secret scanner limit")
                     continue
                 try:
                     for s in scan_line(line):
@@ -171,15 +213,21 @@ def _try_detect_secrets(content: str) -> list[dict[str, Any]] | None:
                                 ),
                             }
                         )
-                except Exception:
+                except Exception as exc:
+                    if require_complete:
+                        raise IncompleteSecretScan("secret scanner failed") from exc
                     continue
-    except Exception:
+    except IncompleteSecretScan:
+        raise
+    except Exception as exc:
+        if require_complete:
+            raise IncompleteSecretScan("secret scanner failed") from exc
         return None
     return hits
 
 
 def _scan_patterns(
-    content: str, patterns: list[tuple[re.Pattern[str], str]] | tuple
+    content: str, patterns: list[tuple[re.Pattern[str], str]] | tuple, *, swift_code: bool = False
 ) -> list[dict[str, Any]]:
     """Linear regex scan over ``patterns``, one hit dict per match.
 
@@ -198,6 +246,77 @@ def _scan_patterns(
         line_starts.append(nl + 1)
         nl = content.find("\n", nl + 1)
     context_ok_by_line: dict[int, bool] = {}
+    swift_tree = None
+    swift_tree_loaded = False
+    swift_uncertain = None
+    swift_compiler_accepted = None
+
+    def _swift_declaration_identifier(start: int, end: int) -> bool:
+        nonlocal swift_tree, swift_tree_loaded, swift_uncertain, swift_compiler_accepted
+        if swift_uncertain is None:
+            swift_uncertain = (
+                bool(_SWIFT_POSSIBLE_REGEX_START.search(content))
+                or any(
+                    marker in content
+                    for marker in (
+                        '"""',
+                        "/*",
+                        "*/",
+                        "#/",
+                        "/#",
+                        "#if",
+                        "#elseif",
+                        "#else",
+                        "#endif",
+                    )
+                )
+                or any(
+                    '"' in line and _LONG_SECRET_SHAPE.search(line) for line in content.splitlines()
+                )
+            )
+        if swift_uncertain:
+            return False
+        if not swift_tree_loaded:
+            swift_tree_loaded = True
+            try:
+                from tree_sitter import Parser
+
+                from chameleon_mcp.extractors.treesitter.grammars import grammar_for_path
+
+                swift_tree = Parser(grammar_for_path("source.swift")).parse(content.encode("utf-8"))
+            except Exception:
+                return False
+        if swift_tree is None:
+            return False
+        try:
+            if swift_tree.root_node.has_error:
+                if swift_compiler_accepted is None:
+                    swift_compiler_accepted = _swift_compiler_parses(content)
+                if not swift_compiler_accepted:
+                    return False
+            byte_start = len(content[:start].encode("utf-8"))
+            byte_end = len(content[:end].encode("utf-8"))
+            node = swift_tree.root_node.named_descendant_for_byte_range(byte_start, byte_end)
+            if node is None or node.start_byte != byte_start or node.end_byte != byte_end:
+                return False
+            if node.type == "simple_identifier":
+                return bool(
+                    node.parent
+                    and node.parent.type == "function_declaration"
+                    and not node.parent.has_error
+                )
+            if node.type != "type_identifier":
+                return False
+            while node is not None and not node.has_error:
+                if node.type == "property_declaration":
+                    return (
+                        node.child_by_field_name("value") is None
+                        and node.child_by_field_name("computed_value") is None
+                    )
+                node = node.parent
+        except Exception:
+            return False
+        return False
 
     def _line_index(position: int) -> int:
         return bisect.bisect_right(line_starts, position) - 1
@@ -216,6 +335,22 @@ def _scan_patterns(
             idx = _line_index(match.start())
             if kind in _CONTEXT_GATED_KINDS and not _credential_context_at(idx):
                 continue
+            if swift_code and kind == "possible_aws_secret":
+                start = line_starts[idx]
+                end = line_starts[idx + 1] - 1 if idx + 1 < len(line_starts) else len(content)
+                line = content[start:end]
+                declaration = _SWIFT_UNINITIALIZED_PROPERTY.fullmatch(
+                    line
+                ) or _SWIFT_FUNCTION_DECLARATION.fullmatch(line)
+                if (
+                    declaration
+                    and (
+                        start + declaration.start("identifier") <= match.start()
+                        and match.end() <= start + declaration.end("identifier")
+                    )
+                    and _swift_declaration_identifier(match.start(), match.end())
+                ):
+                    continue
             hits.append(
                 {
                     "type": kind,
@@ -231,9 +366,9 @@ def _scan_patterns(
     return hits
 
 
-def _fallback_scan(content: str) -> list[dict[str, Any]]:
+def _fallback_scan(content: str, *, swift_code: bool = False) -> list[dict[str, Any]]:
     """Regex-based scan when detect-secrets is unavailable."""
-    return _scan_patterns(content, _FALLBACK_PATTERNS)
+    return _scan_patterns(content, _FALLBACK_PATTERNS, swift_code=swift_code)
 
 
 # Lazily-filtered subset of _FALLBACK_PATTERNS whose kinds may hard-block.
@@ -266,26 +401,30 @@ def scan_for_hard_secrets(content: str) -> list[dict[str, Any]]:
     return _scan_patterns(content, _HARD_PATTERNS)
 
 
-def scan_for_secrets(content: str) -> list[dict[str, Any]]:
+def scan_for_secrets(
+    content: str, *, language: str | None = None, require_complete: bool = False
+) -> list[dict[str, Any]]:
     """Return list of detected secrets in content. Empty list = safe.
 
     Runs BOTH detect-secrets (when available, broad coverage) AND the
     fallback regex set (deterministic, conservative). detect-secrets relies
     on entropy + context heuristics that may miss inline test fixtures or
     short example values; the fallback patterns catch those reliably.
-    Hits are deduplicated by (type, position).
+    Hits are deduplicated by (type, position). When require_complete is true,
+    an unavailable scanner or an over-limit line raises IncompleteSecretScan.
     """
     hits: list[dict[str, Any]] = []
     seen: set[tuple] = set()
 
-    detect_secrets_hits = _try_detect_secrets(content) or []
+    detect_secrets_hits = _try_detect_secrets(content, require_complete=require_complete) or []
     for hit in detect_secrets_hits:
         key = (hit.get("type"), hit.get("line_number"), hit.get("position"))
         if key not in seen:
             seen.add(key)
             hits.append(hit)
 
-    for hit in _fallback_scan(content):
+    swift_code = language == "swift"
+    for hit in _fallback_scan(content, swift_code=swift_code):
         key = (hit.get("type"), hit.get("position"))
         if key not in seen:
             seen.add(key)

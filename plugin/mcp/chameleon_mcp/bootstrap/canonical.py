@@ -579,7 +579,8 @@ def select_canonicals(
             except OSError:
                 continue
 
-            secret_hits = scan_for_secrets(content)
+            language = "swift" if candidate.path.suffix.lower() == ".swift" else None
+            secret_hits = scan_for_secrets(content, language=language)
             injection_hits = scan_for_injection_signals(content)
             poisoning_hits = scan_for_dangerous_patterns(content)
 

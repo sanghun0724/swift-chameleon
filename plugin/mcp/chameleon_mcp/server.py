@@ -221,7 +221,8 @@ def get_pattern_context(file_path: str) -> dict:
                           "content_signal_match": str, "match_quality": str, "sub_buckets_count": int},
             "canonical_excerpt": {"content": str, "witness_path": str, "truncated": bool, "sha_hint": str,
                                    "missing": bool (only when the witness file is gone),
-                                   "oversize": bool (only when the witness exceeds the size ceiling)},
+                                   "oversize": bool (only when the witness exceeds the size ceiling),
+                                   "redacted_reason": str (when content is withheld)},
             "rules": [(source_key, config_dict), ...],
             "idioms": str (omitted when none),
             "meta": {"mtime_token": str, "computed_at": str}
@@ -235,9 +236,10 @@ def get_pattern_context(file_path: str) -> dict:
 def get_canonical_excerpt(repo: str, archetype: str) -> dict:
     """Return the canonical witness source for an archetype.
 
-    The content is the witness file's source as committed (sanitized, not
+    The content is the current working-tree witness source (sanitized, not
     annotated), so its length tracks the witness — typically well under a
-    thousand tokens, larger for a long canonical file.
+    thousand tokens, larger for a long canonical file. A failed safety scan
+    returns a failed status without witness content.
     """
     return tools.get_canonical_excerpt(repo, archetype)
 
