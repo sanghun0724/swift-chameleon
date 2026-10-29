@@ -20,6 +20,7 @@ from chameleon_mcp._thresholds import threshold_float
 from chameleon_mcp.locks import LockHeldError, portable_flock_deadline, portable_funlock
 from chameleon_mcp.safe_open import (
     UnsafeFileError,
+    profile_artifact_max_bytes,
     safe_read_profile_artifact_bytes,
 )
 
@@ -355,6 +356,7 @@ def hash_profile(profile_dir: Path) -> str:
     if not profile_json.is_file():
         return ""
     h = hashlib.sha256()
+    artifact_limit = profile_artifact_max_bytes()
     names: list[str] = list(_HASHED_ARTIFACTS)
     idioms_dir = profile_dir / "idioms"
     try:
@@ -370,7 +372,7 @@ def hash_profile(profile_dir: Path) -> str:
     for filename in names:
         artifact = profile_dir / filename
         try:
-            body = safe_read_profile_artifact_bytes(artifact)
+            body = safe_read_profile_artifact_bytes(artifact, max_bytes=artifact_limit)
         except FileNotFoundError:
             continue
         except (OSError, UnsafeFileError) as exc:

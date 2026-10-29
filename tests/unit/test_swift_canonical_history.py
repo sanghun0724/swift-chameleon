@@ -128,6 +128,25 @@ def test_same_commit_and_clock_ties_are_deterministic(repo):
     assert selected(repo, ["a.swift", "z.swift"])[0] == {"a.swift"}
 
 
+def test_swift_canonical_excludes_secret_in_multiline_string(repo):
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    write(
+        repo, "SecureRepository.swift", f'let example = """\nprivate let accessToken: {blob}\n"""\n'
+    )
+    commit(repo)
+    witnesses, result = selected(repo, ["SecureRepository.swift"])
+    assert not witnesses
+    assert len(result.clusters_with_only_failing_canonicals) == 1
+
+
+def test_swift_canonical_keeps_uninitialized_type_declaration(repo):
+    name = "LongSwiftModel" + "A" * 26
+    write(repo, "SecureRepository.swift", f"private let accessToken: {name}\n")
+    commit(repo)
+    witnesses, _ = selected(repo, ["SecureRepository.swift"])
+    assert witnesses == {"SecureRepository.swift"}
+
+
 def test_latest_is_traversal_order_not_maximum_epoch(repo):
     write(repo, "a.swift")
     commit(repo, RECENT)

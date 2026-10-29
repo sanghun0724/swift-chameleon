@@ -430,10 +430,14 @@ def nestjs_role_for_path(file_path: str) -> str | None:
     return None
 
 
+SWIFT_BUCKET_VERSION = 2
+
 _SWIFT_ROLE_SUFFIXES: tuple[tuple[str, str], ...] = (
     ("ViewController", "view-controller"),
     ("RepositoryImpl", "repository"),
     ("UseCaseImpl", "use-case"),
+    ("InteractorImpl", "interactor"),
+    ("ViewModelFactory", "view-model-factory"),
     ("ViewModel", "view-model"),
     ("Repository", "repository"),
     ("UseCase", "use-case"),
@@ -445,6 +449,10 @@ _SWIFT_ROLE_SUFFIXES: tuple[tuple[str, str], ...] = (
     ("Controller", "controller"),
     ("Presenter", "presenter"),
     ("Coordinator", "coordinator"),
+    ("Interactor", "interactor"),
+    ("Buildable", "buildable"),
+    ("Logger", "logger"),
+    ("Mapper", "mapper"),
     ("Cell", "cell"),
     ("View", "view"),
     ("DTO", "dto"),
@@ -454,6 +462,7 @@ _SWIFT_DECLARATION_KINDS = {
     for kind in ("class", "struct", "enum", "actor", "protocol", "extension")
 }
 _SWIFT_DECLARATION_SEPARATOR = "#declarations="
+_SWIFT_REGION_PREFIX = re.compile(r"^(KRJP|NA|KR|JP|Global)(?=[A-Z])")
 
 
 def swift_role_for_path(file_path: str) -> str | None:
@@ -468,6 +477,11 @@ def swift_role_for_path(file_path: str) -> str | None:
         p.lower() in {"test", "tests", "uitests", "testing"} for p in parts[:-1]
     ) or stem.endswith(("Tests", "Test", "UITests")):
         return "test"
+    dirs = [p.lower() for p in parts[:-1]]
+    if stem.endswith("View") and any(
+        dirs[i] == "domain" and dirs[i + 1] in {"entity", "entities"} for i in range(len(dirs) - 1)
+    ):
+        return "entity"
     for suffix, role in _SWIFT_ROLE_SUFFIXES:
         if stem.endswith(suffix):
             return role
@@ -488,7 +502,23 @@ def _swift_path_bucket(file_path: str) -> str:
     scope = dirs[:2]
     if len(dirs) >= 3 and dirs[0].lower() == "projects":
         scope = dirs[:3]
+        if len(dirs) >= 4 and dirs[3].lower() in {"interface", "sources", "domain", "data"}:
+            scope = dirs[:4]
+            remaining = dirs[4:]
+            for index, part in enumerate(remaining):
+                if part.lower() in {"scene", "scenes"} and index + 1 < len(remaining):
+                    scope = [*scope, part, remaining[index + 1]]
+                    break
+            variants = {"default", "na", "kr", "jp", "krjp", "global"}
+            path_variants = [part.lower() for part in remaining if part.lower() in variants]
+            scope = [*scope, *(f"variant-{variant}" for variant in path_variants)]
+            prefix = _SWIFT_REGION_PREFIX.match(parts[-1][:-6])
+            if prefix and prefix.group(1).lower() not in path_variants:
+                scope.append(f"variant-{prefix.group(1).lower()}")
     role = swift_role_for_path(file_path) or "unknown"
+    if role == "unknown" and len(dirs) >= 4 and dirs[0].lower() == "projects":
+        offset = 4 if dirs[3].lower() in {"interface", "sources", "domain", "data"} else 3
+        scope = [*scope, "directory", *dirs[offset:]]
     return "/".join(["swift", *scope, role])
 
 

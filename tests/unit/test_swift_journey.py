@@ -105,6 +105,226 @@ def test_swift_new_file_context_states_path_evidence(swift_repo):
     assert context["archetype"]["file_exists"] is False, context
 
 
+def test_normal_refresh_rebuilds_legacy_swift_partition(swift_repo):
+    from chameleon_mcp import tools
+    from chameleon_mcp.signatures import SWIFT_BUCKET_VERSION
+
+    repo, _ = swift_repo
+    manifest = repo / ".chameleon/profile.json"
+    data = json.loads(manifest.read_text())
+    data.pop("swift_bucket_version", None)
+    manifest.write_text(json.dumps(data))
+    result = tools.refresh_repo(str(repo))["data"]
+    assert result["status"] != "noop"
+    assert json.loads(manifest.read_text())["swift_bucket_version"] == SWIFT_BUCKET_VERSION
+
+
+@pytest.mark.parametrize("force", [False, True])
+def test_refresh_does_not_downgrade_newer_swift_partition(swift_repo, force):
+    from chameleon_mcp import tools
+    from chameleon_mcp.signatures import SWIFT_BUCKET_VERSION
+
+    repo, _ = swift_repo
+    manifest = repo / ".chameleon/profile.json"
+    data = json.loads(manifest.read_text())
+    data["swift_bucket_version"] = SWIFT_BUCKET_VERSION + 1
+    manifest.write_text(json.dumps(data))
+    before = manifest.read_bytes()
+    result = tools.refresh_repo(str(repo), force=force)["data"]
+    assert result["status"] == "unsupported_swift_bucket_version"
+    assert manifest.read_bytes() == before
+
+
+def test_force_bootstrap_does_not_downgrade_newer_swift_partition(swift_repo):
+    from chameleon_mcp import tools
+    from chameleon_mcp.signatures import SWIFT_BUCKET_VERSION
+
+    repo, _ = swift_repo
+    manifest = repo / ".chameleon/profile.json"
+    data = json.loads(manifest.read_text())
+    data["swift_bucket_version"] = SWIFT_BUCKET_VERSION + 1
+    manifest.write_text(json.dumps(data))
+    before = manifest.read_bytes()
+    assert (
+        tools.bootstrap_repo(str(repo), force=True)["data"]["status"]
+        == "unsupported_swift_bucket_version"
+    )
+    assert manifest.read_bytes() == before
+
+
+def test_swift_safe_identifier_survives_bootstrap_and_live_excerpt_scan(swift_repo):
+    from chameleon_mcp import codex_hooks, tools
+
+    repo, recent = swift_repo
+    name = "LongSwiftModel" + "A" * 26
+    declaration = f"private let accessToken: {name}"
+    recent.write_text(
+        recent.read_text().replace("    func render", f"    {declaration}\n    func render")
+    )
+    assert (
+        tools.bootstrap_repo(str(repo), force=True, now=1_740_000_000)["data"]["status"]
+        == "success"
+    )
+    _trusted(repo)
+    context = _context(repo, recent)
+    assert declaration in context["canonical_excerpt"]["content"]
+    excerpt = tools.get_canonical_excerpt(str(repo), context["archetype"]["archetype"])["data"]
+    assert declaration in excerpt["content"]
+
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    recent.write_text(
+        recent.read_text() + f'\nlet example = """\nprivate let accessToken: {blob}\n"""\n'
+    )
+    assert not _context(repo, recent)["canonical_excerpt"]["content"]
+    excerpt = tools.get_canonical_excerpt(str(repo), context["archetype"]["archetype"])["data"]
+    assert not excerpt["content"]
+    patch = f"*** Begin Patch\n*** Update File: {recent}\n@@\n-old\n+new\n*** End Patch"
+    assert codex_hooks.context_response(codex_hooks.HookRequest("PreToolUse", repo, patch)) == {}
+
+
+@pytest.mark.parametrize("api", ["pattern_context", "canonical_excerpt"])
+@pytest.mark.parametrize("failure", ["runtime_error", "import_error"])
+def test_swift_scan_failure_withholds_witness_and_recovers(swift_repo, monkeypatch, api, failure):
+    import builtins
+
+    from chameleon_mcp import _excerpt_cache, codex_hooks, tools
+    from chameleon_mcp.bootstrap import canonical_scanner
+
+    repo, recent = swift_repo
+    _trusted(repo)
+    context = _context(repo, recent)
+    archetype = context["archetype"]["archetype"]
+    assert archetype
+    assert "recent implementation" in context["canonical_excerpt"]["content"]
+
+    def read_excerpt():
+        if api == "pattern_context":
+            return _context(repo, recent)["canonical_excerpt"]
+        return tools.get_canonical_excerpt(str(repo), archetype)["data"]
+
+    assert "recent implementation" in read_excerpt()["content"]
+    _excerpt_cache.clear()
+    with monkeypatch.context() as patch:
+        if failure == "runtime_error":
+
+            def broken_scan(*args, **kwargs):
+                raise RuntimeError("scanner unavailable")
+
+            patch.setattr(canonical_scanner, "is_safe_canonical", broken_scan)
+        else:
+            real_import = builtins.__import__
+
+            def broken_import(name, *args, **kwargs):
+                if name == "chameleon_mcp.bootstrap.canonical_scanner":
+                    raise ImportError("scanner unavailable")
+                return real_import(name, *args, **kwargs)
+
+            patch.setattr(builtins, "__import__", broken_import)
+        blocked = read_excerpt()
+        assert not blocked["content"]
+        assert blocked.get("witness_path") is None
+        assert blocked.get("sha_hint") is None
+        if api == "pattern_context":
+            assert blocked["redacted_reason"] == "safety_scan_failed"
+            patch_text = (
+                f"*** Begin Patch\n*** Update File: {recent}\n@@\n-old\n+new\n*** End Patch"
+            )
+            assert (
+                codex_hooks.context_response(
+                    codex_hooks.HookRequest("PreToolUse", repo, patch_text)
+                )
+                == {}
+            )
+        else:
+            assert blocked["status"] == "failed"
+            assert "safety scan failed" in blocked["error"]
+
+    assert "recent implementation" in read_excerpt()["content"]
+
+
+@pytest.mark.parametrize("api", ["pattern_context", "canonical_excerpt"])
+@pytest.mark.parametrize("failure", ["backend_raises", "backend_missing"])
+def test_swift_backend_scan_error_does_not_disclose_witness(swift_repo, monkeypatch, api, failure):
+    import builtins
+
+    from detect_secrets.core import scan
+
+    from chameleon_mcp import _excerpt_cache, tools
+    from chameleon_mcp.bootstrap.canonical_scanner import is_safe_canonical
+
+    repo, recent = swift_repo
+    _trusted(repo)
+    archetype = _context(repo, recent)["archetype"]["archetype"]
+    url = "https://" + "alice" + ":" + "correctHorseBatteryStaple" + "@" + "example.com"
+    poisoned = recent.read_text() + f'\nlet endpoint = "{url}"\n'
+    assert not is_safe_canonical(poisoned, language="swift")
+    recent.write_text(poisoned)
+    _excerpt_cache.clear()
+
+    if failure == "backend_raises":
+
+        def broken_scan(*args, **kwargs):
+            raise RuntimeError("detect-secrets unavailable")
+
+        monkeypatch.setattr(scan, "scan_line", broken_scan)
+    else:
+        real_import = builtins.__import__
+
+        def broken_import(name, *args, **kwargs):
+            if name == "detect_secrets.core.scan":
+                raise ImportError("detect-secrets unavailable")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", broken_import)
+    if api == "pattern_context":
+        blocked = _context(repo, recent)["canonical_excerpt"]
+    else:
+        blocked = tools.get_canonical_excerpt(str(repo), archetype)["data"]
+    assert not blocked["content"]
+    assert url not in json.dumps(blocked)
+
+
+@pytest.mark.parametrize("api", ["pattern_context", "canonical_excerpt"])
+def test_swift_incomplete_long_line_scan_withholds_witness(swift_repo, api):
+    from chameleon_mcp import _excerpt_cache, tools
+    from chameleon_mcp._thresholds import threshold_int
+
+    repo, recent = swift_repo
+    _trusted(repo)
+    archetype = _context(repo, recent)["archetype"]["archetype"]
+    benign = 'let title = "' + "a" * threshold_int("SECRET_SCAN_MAX_LINE_LEN") + '"\n'
+    recent.write_text(recent.read_text() + "\n" + benign)
+    _excerpt_cache.clear()
+    if api == "pattern_context":
+        blocked = _context(repo, recent)["canonical_excerpt"]
+    else:
+        blocked = tools.get_canonical_excerpt(str(repo), archetype)["data"]
+    assert not blocked["content"]
+    assert (
+        blocked.get("redacted_reason") == "safety_scan_failed" or blocked.get("status") == "failed"
+    )
+
+
+@pytest.mark.parametrize("api", ["pattern_context", "canonical_excerpt"])
+def test_swift_large_multiline_witness_remains_available(swift_repo, api):
+    from chameleon_mcp import _excerpt_cache, tools
+    from chameleon_mcp._thresholds import threshold_int
+
+    repo, recent = swift_repo
+    _trusted(repo)
+    archetype = _context(repo, recent)["archetype"]["archetype"]
+    lines = [f'let title{i} = "' + "abc" * 30 + '"' for i in range(30)]
+    assert sum(len(line) for line in lines) > threshold_int("SECRET_SCAN_MAX_LINE_LEN")
+    assert max(map(len, lines)) < threshold_int("SECRET_SCAN_MAX_LINE_LEN")
+    recent.write_text(recent.read_text() + "\n" + "\n".join(lines) + "\n")
+    _excerpt_cache.clear()
+    if api == "pattern_context":
+        result = _context(repo, recent)["canonical_excerpt"]
+    else:
+        result = tools.get_canonical_excerpt(str(repo), archetype)["data"]
+    assert "let title29" in result["content"]
+
+
 def _hook(payload: str, repo: Path, *, disabled: bool = False):
     env = {
         **os.environ,

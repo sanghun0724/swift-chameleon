@@ -70,6 +70,12 @@ def _mock_parse(monkeypatch, parsed, reason=None):
         ("Sources/Accounts/AccountViewController.swift", "view-controller"),
         ("Sources/Accounts/AccountView.swift", "view"),
         ("Sources/Accounts/AccountRepositoryImpl.swift", "repository"),
+        ("Sources/Accounts/AccountInteractorImpl.swift", "interactor"),
+        ("Sources/Accounts/AccountInteractor.swift", "interactor"),
+        ("Sources/Accounts/AccountLogger.swift", "logger"),
+        ("Sources/Accounts/AccountBuildable.swift", "buildable"),
+        ("Sources/Accounts/AccountViewModelFactory.swift", "view-model-factory"),
+        ("Sources/Accounts/AccountMapper.swift", "mapper"),
         ("Tests/Accounts/AccountView.swift", "test"),
         ("Sources/Accounts/AccountViewTests.swift", "test"),
         ("Package.swift", "build-manifest"),
@@ -93,6 +99,122 @@ def test_swift_buckets_preserve_module_and_layer():
     assert path_pattern_bucket_for(
         "Sources/Accounts/Nested/AccountView.swift"
     ) == path_pattern_bucket_for(paths[0])
+
+
+def test_project_swift_buckets_separate_targets_scenes_variants_and_roles():
+    module = "Projects/Feature/WriteForm"
+    default = f"{module}/Sources/Scenes/WriteForm/Default/FormInteractor.swift"
+    north_america = f"{module}/Sources/Scenes/WriteForm/NA/NAFormInteractor.swift"
+    logger = f"{module}/Sources/Scenes/WriteForm/Default/FormLogger.swift"
+    other_scene = f"{module}/Sources/Scenes/Other/Default/FormInteractor.swift"
+    interface = f"{module}/Interface/Scenes/WriteForm/Default/FormInteractor.swift"
+    assert swift_role_for_path(default) == "interactor"
+    assert swift_role_for_path(logger) == "logger"
+    assert (
+        len(
+            {
+                path_pattern_bucket_for(path)[0]
+                for path in [default, north_america, logger, other_scene, interface]
+            }
+        )
+        == 5
+    )
+
+
+def test_domain_entity_named_view_is_not_a_ui_view():
+    path = "Projects/Feature/Market/Interface/Domain/Entity/ParcelInfoView.swift"
+    assert swift_role_for_path(path) == "entity"
+    assert (
+        swift_role_for_path("Projects/Feature/Market/Sources/Scene/ParcelInfoView.swift") == "view"
+    )
+    assert (
+        swift_role_for_path("Projects/Feature/Market/Sources/Scene/Entity/ParcelInfoView.swift")
+        == "view"
+    )
+    assert (
+        swift_role_for_path("Projects/Feature/Market/Sources/Entity/ParcelRepository.swift")
+        == "repository"
+    )
+
+
+def test_country_filename_prefixes_stay_separate_outside_named_variant_directory():
+    base = "Projects/Feature/Market/Sources/Scenes/WriteForm/Common/"
+    paths = [
+        base + name
+        for name in ("NAFormInteractor.swift", "KRFormInteractor.swift", "FormInteractor.swift")
+    ]
+    assert len({path_pattern_bucket_for(path)[0] for path in paths}) == 3
+    assert (
+        path_pattern_bucket_for(base + "NAFormInteractor.swift")[0]
+        == path_pattern_bucket_for(base + "NAPaymentInteractor.swift")[0]
+    )
+
+
+def test_country_filename_prefix_matches_its_explicit_directory():
+    base = "Projects/Feature/Market/Sources/Scenes/WriteForm/NA/"
+    assert (
+        path_pattern_bucket_for(base + "NAFormInteractor.swift")[0]
+        == path_pattern_bucket_for(base + "NewInteractor.swift")[0]
+    )
+
+
+def test_unknown_project_roles_are_limited_to_their_parent_directory():
+    base = "Projects/Feature/Market/Sources/Domain"
+    first = f"{base}/Pricing/RuleEvaluator.swift"
+    sibling = f"{base}/Pricing/PriceConfig.swift"
+    other = f"{base}/Navigation/RouteConfig.swift"
+    assert path_pattern_bucket_for(first)[0] == path_pattern_bucket_for(sibling)[0]
+    assert path_pattern_bucket_for(first)[0] != path_pattern_bucket_for(other)[0]
+
+
+@pytest.mark.parametrize("changed_segment", ["target", "scene", "variant"])
+def test_existing_profile_does_not_match_another_boundary(tmp_path, monkeypatch, changed_segment):
+    base = "Projects/Feature/Market"
+    target = tmp_path / f"{base}/Sources/Scenes/WriteForm/NA/FormInteractor.swift"
+    references = {
+        "target": f"{base}/Interface/Scenes/WriteForm/NA/OtherInteractor.swift",
+        "scene": f"{base}/Sources/Scenes/Other/NA/OtherInteractor.swift",
+        "variant": f"{base}/Sources/Scenes/WriteForm/Default/OtherInteractor.swift",
+    }
+    target.parent.mkdir(parents=True)
+    target.write_text("class FormInteractor {}")
+    reference = _parsed(tmp_path / references[changed_segment], "SwiftClassDeclaration")
+    loaded = _profile(tmp_path, {"other": reference})
+    _mock_parse(monkeypatch, _parsed(target, "SwiftClassDeclaration"))
+    result = tools._get_archetype_with_loaded(target, tmp_path, loaded, "none")["data"]
+    assert result["archetype"] is None
+
+
+def test_interactor_does_not_resolve_legacy_logger_witness(tmp_path, monkeypatch):
+    base = tmp_path / "Projects/Feature/Market/Sources/Scenes/WriteForm"
+    query = base / "NA/NAFormInteractor.swift"
+    query.parent.mkdir(parents=True)
+    query.write_text("class NAFormInteractor {}")
+    logger = _parsed(base / "Default/FormLogger.swift", "SwiftClassDeclaration")
+    loaded = _profile(tmp_path, {"legacy-logger": logger})
+    _mock_parse(monkeypatch, _parsed(query, "SwiftClassDeclaration"))
+    data = tools._get_archetype_with_loaded(query, tmp_path, loaded, "none")["data"]
+    assert data["archetype"] is None
+
+
+def test_legacy_project_profile_requires_refresh(tmp_path, monkeypatch):
+    directory = tmp_path / "Projects/Feature/Market/Sources/Scenes/WriteForm/NA"
+    query = directory / "NewInteractor.swift"
+    query.parent.mkdir(parents=True)
+    query.write_text("class NewInteractor {}")
+    reference = _parsed(directory / "ExistingInteractor.swift", "SwiftClassDeclaration")
+    loaded = _profile(tmp_path, {"legacy": reference})
+    loaded.archetypes["archetypes"]["legacy"]["paths_pattern"] = (
+        "swift/Projects/Feature/Market/unknown#declarations=class:swift"
+    )
+    _mock_parse(monkeypatch, _parsed(query, "SwiftClassDeclaration"))
+    result = tools._get_archetype_with_loaded(query, tmp_path, loaded, "none")["data"]
+    assert result["archetype"] is None
+    other_scene = tmp_path / "Projects/Feature/Market/Sources/Scenes/Other/NA/NewInteractor.swift"
+    assert (
+        tools._get_archetype_with_loaded(other_scene, tmp_path, loaded, "none")["data"]["archetype"]
+        is None
+    )
 
 
 def test_swift_partition_survives_both_fuzzy_merge_passes(tmp_path):

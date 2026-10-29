@@ -74,9 +74,9 @@ def _putter(mod):
 
 
 class TestConstants:
-    def test_context_transform_version_is_3(self, tmp_path, monkeypatch):
+    def test_context_transform_version_is_5(self, tmp_path, monkeypatch):
         mod = _fresh(monkeypatch, tmp_path)
-        assert mod.CONTEXT_TRANSFORM_VERSION == 3
+        assert mod.CONTEXT_TRANSFORM_VERSION == 5
 
     def test_default_cap_is_64(self, tmp_path, monkeypatch):
         mod = _fresh(monkeypatch, tmp_path)

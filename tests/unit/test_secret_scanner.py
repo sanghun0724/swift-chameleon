@@ -69,6 +69,186 @@ def test_aws_secret_assignment_is_flagged():
     assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src))
 
 
+def test_uninitialized_swift_property_type_is_not_a_secret():
+    type_name = "LongSwiftModel" + "A" * 26
+    for suffix in ("", "?"):
+        src = f"private let accessToken: {type_name}{suffix}"
+        assert not any(
+            h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift")
+        )
+
+
+def test_swift_initialized_property_still_scans_secret():
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    src = f'private let accessToken: String = "{blob}"'
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src))
+
+
+def test_swift_property_initializer_on_next_line_is_not_treated_as_uninitialized():
+    name = "LongSwiftModel" + "A" * 26
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    src = f'private let accessToken: {name}\n = "{blob}"'
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_swift_identifier_does_not_hide_unrelated_long_string_literal():
+    name = "LongSwiftModel" + "A" * 26
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    src = f'private let accessToken: {name}\nlet payload = "{blob}"'
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_swift_function_name_is_not_a_secret():
+    name = "registerAccessToken" + "A" * 21
+    src = f"private func {name}(resolver: Resolver) {{\n}}"
+    assert not any(
+        h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift")
+    )
+
+
+def test_declaration_inside_swift_multiline_string_still_scans():
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    src = f'let example = """\nprivate let accessToken: {blob}\n"""'
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_declaration_inside_swift_block_comment_still_scans():
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    src = f"/*\nprivate let accessToken: {blob}\n*/"
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_declaration_inside_swift_multiline_regex_still_scans():
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    src = f"let pattern = #/\nprivate let accessToken: {blob}\n/#"
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_swift_parser_recovery_does_not_hide_potential_secret():
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    src = f"let regex = /\nprivate let accessToken: {blob}\n/"
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_swift_compiler_confirms_valid_code_with_tree_sitter_recovery(monkeypatch):
+    from chameleon_mcp.profile import secret_scanner
+
+    monkeypatch.setattr(secret_scanner, "_swift_compiler_parses", lambda _: True, raising=False)
+    name = "LongSwiftModel" + "A" * 26
+    src = (
+        f"class A {{\nprivate let accessToken: {name}\nfunc f() {{ x.map {{ .success(()) }} }}\n}}"
+    )
+    assert not any(
+        h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift")
+    )
+
+
+def test_swift_compiler_failure_keeps_recovered_identifier_flagged(monkeypatch):
+    from chameleon_mcp.profile import secret_scanner
+
+    monkeypatch.setattr(secret_scanner, "_swift_compiler_parses", lambda _: False, raising=False)
+    name = "LongSwiftModel" + "A" * 26
+    src = (
+        f"class A {{\nprivate let accessToken: {name}\nfunc f() {{ x.map {{ .success(()) }} }}\n}}"
+    )
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_swift_compiler_timeout_and_missing_tool_fail_closed(monkeypatch):
+    import subprocess
+
+    from chameleon_mcp.profile import secret_scanner
+
+    monkeypatch.setattr(secret_scanner.sys, "platform", "darwin")
+    for error in (subprocess.TimeoutExpired("swiftc", 5), FileNotFoundError("swiftc")):
+
+        def fail(*_args, error=error, **_kwargs):
+            raise error
+
+        monkeypatch.setattr(secret_scanner.subprocess, "run", fail)
+        assert not secret_scanner._swift_compiler_parses("struct A {}")
+
+
+def test_regex_shaped_input_remains_flagged_even_if_compiler_reports_success(monkeypatch):
+    from chameleon_mcp.profile import secret_scanner
+
+    monkeypatch.setattr(secret_scanner, "_swift_compiler_parses", lambda _: True, raising=False)
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    src = f"let regex = /\nprivate let accessToken: {blob}\n/"
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_inactive_swift_branch_does_not_hide_potential_secret():
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    src = (
+        f"struct A {{}}\n#if swift(>=99)\nlet r = try /\nprivate let accessToken: {blob}\n/\n#endif"
+    )
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_other_languages_do_not_skip_declaration_shaped_content():
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    src = f"private let accessToken: {blob}"
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src))
+
+
+def test_swift_parser_unavailable_keeps_potential_secret(monkeypatch):
+    from chameleon_mcp.extractors.treesitter import grammars
+
+    def unavailable(_path):
+        raise RuntimeError("parser unavailable")
+
+    monkeypatch.setattr(grammars, "grammar_for_path", unavailable)
+    name = "LongSwiftModel" + "A" * 26
+    src = f"private let accessToken: {name}"
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_swift_parser_lookup_failure_keeps_potential_secret(monkeypatch):
+    from types import SimpleNamespace
+
+    import tree_sitter
+
+    def fail_lookup(*_args):
+        raise RuntimeError("lookup failed")
+
+    root = SimpleNamespace(has_error=False, named_descendant_for_byte_range=fail_lookup)
+    monkeypatch.setattr(
+        tree_sitter,
+        "Parser",
+        lambda _: SimpleNamespace(parse=lambda _: SimpleNamespace(root_node=root)),
+    )
+    name = "LongSwiftModel" + "A" * 26
+    src = f"private let accessToken: {name}"
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_swift_identifier_offsets_handle_unicode_before_declaration():
+    name = "LongSwiftModel" + "A" * 26
+    src = f"// 설명\nprivate let accessToken: {name}"
+    assert not any(
+        h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift")
+    )
+
+
+def test_malformed_swift_function_keeps_potential_secret():
+    name = "registerAccessToken" + "A" * 21
+    src = f"private func {name}(resolver: Resolver) {{"
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src, language="swift"))
+
+
+def test_swift_function_default_value_still_scans_secret():
+    blob = "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0"
+    src = f'private func work(accessToken: String = "{blob}") {{'
+    assert any(h["type"] == "possible_aws_secret" for h in scan_for_secrets(src))
+
+
+def test_swift_function_name_still_scans_known_token_format():
+    token = "ghp_" + "1234567890abcdefghijklmnopqrstuvwxyz"
+    src = f"private func {token}(resolver: Resolver) {{"
+    assert any(h["type"] == "github_token" for h in scan_for_secrets(src))
+
+
 def test_file_path_beside_ordinary_word_not_flagged_as_aws_secret():
     # The credential-context gate must key on whole words. "authored" is prose,
     # not a credential token, and a 40-char filesystem path is not a secret --
@@ -211,6 +391,21 @@ def test_line_at_cap_still_scanned_by_detect_secrets():
     hits = _try_detect_secrets(line)
     assert hits is not None
     assert any(h["type"] == "AWS Access Key" for h in hits)
+
+
+def test_complete_scan_accepts_limit_but_refuses_longer_lines():
+    import pytest
+
+    from chameleon_mcp._thresholds import threshold_int
+    from chameleon_mcp.profile.secret_scanner import IncompleteSecretScan
+
+    cap = threshold_int("SECRET_SCAN_MAX_LINE_LEN")
+    prefix = 'let title = "'
+    line = prefix + "a" * (cap - len(prefix) - 1) + '"'
+    assert len(line) == cap
+    assert _try_detect_secrets(line, require_complete=True) == []
+    with pytest.raises(IncompleteSecretScan):
+        _try_detect_secrets(line + " ", require_complete=True)
 
 
 # --------------------------------------------------------------------------

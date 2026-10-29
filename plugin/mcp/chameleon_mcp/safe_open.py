@@ -199,6 +199,22 @@ def safe_read_capped(path: Path, *, max_bytes: int, encoding: str = "utf-8") -> 
 
 
 _DEFAULT_PROFILE_ARTIFACT_MAX_BYTES = 5 * 1024 * 1024
+_MAX_OPT_IN_PROFILE_ARTIFACT_BYTES = 24 * 1024 * 1024
+
+
+def profile_artifact_max_bytes() -> int:
+    """Return the profile limit in bytes, defaulting to 5 MiB.
+
+    CHAMELEON_PROFILE_ARTIFACT_MAX_BYTES accepts positive ASCII decimal bytes up
+    to 24 MiB. Invalid values retain the default rather than removing the cap.
+    """
+    raw = os.environ.get("CHAMELEON_PROFILE_ARTIFACT_MAX_BYTES", "")
+    if not raw.isascii() or not raw.isdecimal() or len(raw) > 8:
+        return _DEFAULT_PROFILE_ARTIFACT_MAX_BYTES
+    value = int(raw)
+    if not 0 < value <= _MAX_OPT_IN_PROFILE_ARTIFACT_BYTES:
+        return _DEFAULT_PROFILE_ARTIFACT_MAX_BYTES
+    return value
 
 
 def _open_profile_artifact_fd(path: Path, max_bytes: int) -> tuple[int, os.stat_result]:
@@ -249,7 +265,7 @@ def _open_profile_artifact_fd(path: Path, max_bytes: int) -> tuple[int, os.stat_
 def safe_read_profile_artifact(
     path: Path,
     *,
-    max_bytes: int = _DEFAULT_PROFILE_ARTIFACT_MAX_BYTES,
+    max_bytes: int | None = None,
 ) -> str:
     """Read a chameleon profile artifact as text with O_NOFOLLOW + size cap.
 
@@ -260,20 +276,23 @@ def safe_read_profile_artifact(
     Closes the lstat-then-open TOCTOU window: a teammate-controlled symlink
     swap between two syscalls cannot reach the read.
 
+    An explicit max_bytes overrides the environment-derived default.
+
     Raises:
         UnsafeFileError: on symlink (O_NOFOLLOW), non-regular file, size cap.
         FileNotFoundError: passed through so callers can distinguish absent
                            from unsafe.
     """
-    fd, _ = _open_profile_artifact_fd(path, max_bytes)
-    with os.fdopen(fd, "r", encoding="utf-8", errors="replace") as f:
-        return f.read()
+    content = safe_read_profile_artifact_bytes(path, max_bytes=max_bytes).decode(
+        "utf-8", errors="replace"
+    )
+    return content.replace("\r\n", "\n").replace("\r", "\n")
 
 
 def safe_read_profile_artifact_bytes(
     path: Path,
     *,
-    max_bytes: int = _DEFAULT_PROFILE_ARTIFACT_MAX_BYTES,
+    max_bytes: int | None = None,
 ) -> bytes:
     """Read a chameleon profile artifact as raw bytes with O_NOFOLLOW + cap.
 
@@ -281,9 +300,13 @@ def safe_read_profile_artifact_bytes(
     returns bytes (used by ``profile.trust.hash_profile`` so the hash input
     matches the exact on-disk byte sequence).
     """
-    fd, _ = _open_profile_artifact_fd(path, max_bytes)
+    limit = profile_artifact_max_bytes() if max_bytes is None else max_bytes
+    fd, _ = _open_profile_artifact_fd(path, limit)
     with os.fdopen(fd, "rb") as f:
-        return f.read()
+        body = f.read(limit + 1)
+    if len(body) > limit:
+        raise FileTooLargeError(f"profile artifact {path} exceeds {limit} cap during read")
+    return body
 
 
 def safe_open_fd(
